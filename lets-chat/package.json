@@ -1,0 +1,100 @@
+{
+  "name": "lets-chat",
+  "version": "0.3.9",
+  "description": "A chat app for small teams.",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "prestart": "migroose",
+    "migrate": "migroose"
+  },
+  "engine": {
+    "node": "0.10.x",
+    "npm": "2.1.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sdelements/lets-chat.git"
+  },
+  "author": {
+    "name": "Houssam Haidar",
+    "email": "houssam@sdelements.com"
+  },
+  "contributors": [
+    {
+      "name": "Simon Bartlett",
+      "email": "simon@sdelements.com"
+    },
+    {
+      "name": "Shawn Gustaw",
+      "email": "shawn@sdelements.com"
+    },
+    {
+      "name": "Geoff Whittington",
+      "email": "geoff@sdelements.com"
+    },
+    {
+      "name": "Hanif Virani",
+      "email": "hanif@sdelements.com"
+    },
+    {
+      "name": "Jeffery Bain",
+      "email": "jeff@sdelements.com"
+    },
+    {
+      "name": "Ramanan Sivaranjan",
+      "email": "ramanan@sdelements.com"
+    }
+  ],
+  "keywords": [
+    "chat",
+    "group chat"
+  ],
+  "bugs": {
+    "url": "https://github.com/sdelements/lets-chat/issues"
+  },
+  "homepage": "https://github.com/sdelements/lets-chat",
+  "dependencies": {
+    "MD5": "~1.2.1",
+    "async": "^0.9.0",
+    "bcryptjs": "~2.1.0",
+    "body-parser": "^1.11.0",
+    "colors": "~1.0.3",
+    "compression": "^1.4.0",
+    "connect-assets": "^4.6.0",
+    "connect-mongo": "^0.7.0",
+    "cookie-parser": "^1.3.3",
+    "express.oi": "^0.0.14",
+    "helmet": "^0.6.0",
+    "js-yaml": "~3.2.5",
+    "less": "^2.4.0",
+    "lodash": "^3.1.0",
+    "migroose": "^0.2.1",
+    "migroose-cli": "^0.1.0",
+    "moment": "^2.9.0",
+    "mongoose": "~3.8.22",
+    "mongoose-unique-validator": "~0.4.1",
+    "mongoose-validate": "0.0.5",
+    "multer": "^0.1.8",
+    "node-uuid": "^1.4.2",
+    "node-xmpp-core": "^1.0.0-alpha13",
+    "node-xmpp-server": "^1.0.0-alpha11",
+    "node_hash": "^0.2.0",
+    "nunjucks": "^1.2.0",
+    "on-finished": "^2.2.0",
+    "passport": "^0.2.1",
+    "passport-http": "^0.2.2",
+    "passport-http-bearer": "^1.0.1",
+    "passport-local": "^1.0.0",
+    "passport.socketio": "^3.4.1",
+    "require-directory": "~2.0.0",
+    "require-tree": "~0.3.3"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-bower": "~0.16.0",
+    "grunt-bower-task": "~0.4.0",
+    "socket.io-client": "~1.3.2"
+  }
+}

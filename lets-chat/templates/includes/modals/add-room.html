@@ -1,0 +1,37 @@
+<div id="lcb-add-room" class="modal fade" data-backdrop=false>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form role="form" action="#!/rooms/add" class="lcb-rooms-add">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Add Room</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="lcb-room-name">Name</label>
+                        <input type="text" placeholder="Name"
+                            class="lcb-room-name form-control" >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lcb-room-slug">Slug</label>
+                        <div class="input-group">
+                            <span class="input-group-addon">#</span>
+                            <input type="text" placeholder="Slug"
+                                class="lcb-room-slug form-control" >
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="lcb-room-name">Description</label>
+                        <input type="text" placeholder="Description"
+                            class="lcb-room-description form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
