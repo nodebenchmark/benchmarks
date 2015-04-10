@@ -1,0 +1,23 @@
+{
+  "name": "nodejs-chat",
+  "version": "0.0.4-21",
+  "description": "Chat app using nodejs and socket.io",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/amirrajan/nodejs-chat.git"
+  },
+  "dependencies": {
+    "express": "~3.0.1",
+    "ejs": "~0.8.3",
+    "socket.io": "~0.9.11",
+    "underscore": "~1.5.2"
+  },
+  "subdomain": "amirrajan-nodejs-chat",
+  "engines": {
+    "node": ">=0.8.x"
+  }
+}
