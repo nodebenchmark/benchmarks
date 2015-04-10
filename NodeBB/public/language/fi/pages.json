@@ -1,0 +1,21 @@
+{
+    "home": "Etusivu",
+    "unread": "Lukemattomat aiheet",
+    "popular": "Suositut aiheet",
+    "recent": "Viimeisimmät aiheet",
+    "users": "Rekisteröityneet käyttäjät",
+    "notifications": "Ilmoitukset",
+    "tags": "Tags",
+    "tag": "Topics tagged under \"%1\"",
+    "user.edit": "Muokataan \"%1\"",
+    "user.following": "Käyttäjät, joita %1 seuraa",
+    "user.followers": "Käyttäjät, jotka seuraavat käyttäjää %1",
+    "user.posts": "Käyttäjän %1 kirjoittamat viestit",
+    "user.topics": "Käyttäjän %1 aloittamat aiheet",
+    "user.groups": "%1's Groups",
+    "user.favourites": "Käyttäjän %1 suosikkiviestit",
+    "user.settings": "Käyttäjän asetukset",
+    "user.watched": "Topics watched by %1",
+    "maintenance.text": "%1 is currently undergoing maintenance. Please come back another time.",
+    "maintenance.messageIntro": "Additionally, the administrator has left this message:"
+}

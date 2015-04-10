@@ -1,0 +1,9 @@
+{
+    "title": "Nepřečtené",
+    "no_unread_topics": "Nejsou zde žádné nepřečtené témata.",
+    "load_more": "Načíst další",
+    "mark_as_read": "Označit jako přeštené",
+    "selected": "Vybrané",
+    "all": "Vše",
+    "topics_marked_as_read.success": "Téma bylo označeno jako přečtené!"
+}

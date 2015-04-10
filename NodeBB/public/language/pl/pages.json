@@ -1,0 +1,21 @@
+{
+    "home": "Strona główna",
+    "unread": "Nieprzeczytane wątki",
+    "popular": "Popularne wątki",
+    "recent": "Ostatnie wątki",
+    "users": "Zarejestrowani użytkownicy",
+    "notifications": "Powiadomienia",
+    "tags": "Tags",
+    "tag": "Topics tagged under \"%1\"",
+    "user.edit": "Edytowanie \"%1\"",
+    "user.following": "Obserwowani przez %1",
+    "user.followers": "Obserwujący %1",
+    "user.posts": "Posty napisane przez %1",
+    "user.topics": "Wątki stworzone przez %1",
+    "user.groups": "Grupy %1",
+    "user.favourites": "Ulubione posty %1",
+    "user.settings": "Ustawienia użytkownika",
+    "user.watched": "Topics watched by %1",
+    "maintenance.text": "Obecnie trwają prace konserwacyjne nad %1. Proszę wrócić później.",
+    "maintenance.messageIntro": "Dodatkowo, administrator zostawił wiadomość:"
+}

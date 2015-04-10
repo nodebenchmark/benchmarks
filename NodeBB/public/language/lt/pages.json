@@ -1,0 +1,21 @@
+{
+    "home": "Namai",
+    "unread": "Neskaitytos temos",
+    "popular": "Populiarios temos",
+    "recent": "Paskutinės temos",
+    "users": "Registruoti vartotojai",
+    "notifications": "Pranešimai",
+    "tags": "Tags",
+    "tag": "Topics tagged under \"%1\"",
+    "user.edit": "Redaguojama \"%1\"",
+    "user.following": "Vartotojas %1 seka",
+    "user.followers": "Žmonės, kurie seka %1",
+    "user.posts": "Pranešimai, kuriuos parašė %1",
+    "user.topics": "Temos, kurias sukūrė %1",
+    "user.groups": "%1's grupės",
+    "user.favourites": "Vartotojo %1 mėgstami pranešimai",
+    "user.settings": "Vartotojo nustatymai",
+    "user.watched": "Topics watched by %1",
+    "maintenance.text": "%1 is currently undergoing maintenance. Please come back another time.",
+    "maintenance.messageIntro": "Be to, administratorius paliko šį pranešimą:"
+}

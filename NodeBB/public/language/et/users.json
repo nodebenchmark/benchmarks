@@ -1,0 +1,12 @@
+{
+    "latest_users": "Hilised kasutajad",
+    "top_posters": "Top postitajad",
+    "most_reputation": "Kõige rohkem reputatsiooni",
+    "search": "Otsi",
+    "enter_username": "Sisesta kasutajanimi, keda soovid otsida",
+    "load_more": "Lae veel",
+    "users-found-search-took": "%1 kasutaja(t) leiti! Otsing kestis %2 sekundit.",
+    "filter-by": "Filtreeri",
+    "online-only": "Ainult seesolevad",
+    "picture-only": "Ainult pilt"
+}

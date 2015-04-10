@@ -1,0 +1,11 @@
+{
+    "username-email": "Username / Email",
+    "username": "Username",
+    "email": "Email",
+    "remember_me": "Zapamätať si ma?",
+    "forgot_password": "Zabudol si heslo?",
+    "alternative_logins": "Ďalšie spôsoby prihlásenia",
+    "failed_login_attempt": "Prihlásenie sa nepodarilo, skús to znovu.",
+    "login_successful": "Prihlásenie prebehlo úspešne!",
+    "dont_have_account": "Nemáš účet?"
+}

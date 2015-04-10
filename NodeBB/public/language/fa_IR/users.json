@@ -1,0 +1,12 @@
+{
+    "latest_users": "آخرین کاربران",
+    "top_posters": "بهترین فرستنده‌ها",
+    "most_reputation": "بیش‌ترین اعتبار",
+    "search": "جستجو",
+    "enter_username": "یک نام کاربری برای جستجو وارد کنید",
+    "load_more": "بارگذاری بیش‌تر",
+    "users-found-search-took": "%1 کاربر(ها) یافت شد! جستجو %2 ثانیه طولید",
+    "filter-by": "غربال با",
+    "online-only": "فقط آنلاین",
+    "picture-only": "عکس فقط"
+}

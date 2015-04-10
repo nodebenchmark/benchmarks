@@ -1,0 +1,21 @@
+{
+    "home": "หน้าแรก",
+    "unread": "กระทู้ที่ไม่ได้อ่าน",
+    "popular": "กระทู้ยอดฮิต",
+    "recent": "กระทู้ล่าสุด",
+    "users": "ผู้ใช้ที่ลงทะเบียน",
+    "notifications": "แจ้งเตือน",
+    "tags": "Tags",
+    "tag": "Topics tagged under \"%1\"",
+    "user.edit": "แก้ไข \"%1\"",
+    "user.following": "ผู้ใช้ที่ %1 ติดตาม",
+    "user.followers": "ผู้ใช้ที่ติดตาม %1",
+    "user.posts": "กระทู้โดย %1",
+    "user.topics": "หัวข้อที่ถูกสร้างโดย %1",
+    "user.groups": "กลุ่มของ %1",
+    "user.favourites": "กระทู้ที่ %1 ชอบ",
+    "user.settings": "ตั้งค่าผู้ใช้",
+    "user.watched": "Topics watched by %1",
+    "maintenance.text": "%1 กำลังอยู่ระหว่างการปิดปรับปรุงชั่วคราว กรุณาลองใหม่อีกครั้งในภายหลัง",
+    "maintenance.messageIntro": "ผู้ดูแลระบบได้ฝากข้อความต่อไปนี้เอาไว้"
+}

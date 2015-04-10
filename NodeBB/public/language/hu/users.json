@@ -1,0 +1,12 @@
+{
+    "latest_users": "Legújabb felhasználók",
+    "top_posters": "Legaktívabbak",
+    "most_reputation": "Legnépszerűbbek",
+    "search": "Keresés",
+    "enter_username": "Írj be egy nicknevet a kereséshez",
+    "load_more": "Több betöltése",
+    "users-found-search-took": "%1 user(s) found! Search took %2 seconds.",
+    "filter-by": "Filter By",
+    "online-only": "Online only",
+    "picture-only": "Picture only"
+}

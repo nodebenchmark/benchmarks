@@ -1,0 +1,12 @@
+{
+    "latest_users": "Viimeisimmät käyttäjät",
+    "top_posters": "Aktiivisimmat viestittelijät",
+    "most_reputation": "Eniten mainetta",
+    "search": "Hae",
+    "enter_username": "Syötä käyttäjätunnus hakeaksesi",
+    "load_more": "Lataa lisää",
+    "users-found-search-took": "%1 käyttäjä(ä) löytyi! Haku kesti %2 sekuntia.",
+    "filter-by": "Suodata",
+    "online-only": "Vain verkossa olevat",
+    "picture-only": "Picture only"
+}

@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# $0 script path
+# $1 action
+# $2 subaction
+
+node="$(which nodejs 2>/dev/null)";
+if [ $? -gt 0 ];
+	then node="$(which node)";
+fi
+
+function pidExists() {
+	if [ -e "pidfile" ];
+		then
+			if ps -p $(cat pidfile) > /dev/null
+				then return 1;
+				else
+					rm ./pidfile;
+					return 0;
+			fi
+		else
+			return 0;
+	fi
+}
+
+case "$1" in
+	start)
+		echo "Starting NodeBB";
+		echo "  \"./nodebb stop\" to stop the NodeBB server";
+		echo "  \"./nodebb log\" to view server output";
+
+		# Start the loader daemon
+		"$node" loader "$@"
+		;;
+
+	stop)
+		pidExists;
+		if [ 0 -eq $? ];
+			then
+				echo "NodeBB is already stopped.";
+			else
+				echo "Stopping NodeBB. Goodbye!";
+				kill $(cat pidfile);
+		fi
+		;;
+
+	restart)
+		pidExists;
+		if [ 0 -eq $? ];
+			then
+				echo "NodeBB could not be restarted, as a running instance could not be found.";
+			else
+				echo "Restarting NodeBB.";
+				kill -1 $(cat pidfile);
+		fi
+		;;
+
+	reload)
+		pidExists;
+		if [ 0 -eq $? ];
+			then
+				echo "NodeBB could not be reloaded, as a running instance could not be found.";
+			else
+				echo "Reloading NodeBB.";
+				kill -12 $(cat pidfile);
+		fi
+		;;
+
+	status)
+		pidExists;
+		if [ 0 -eq $? ];
+			then
+				echo "NodeBB is not running";
+				echo "  \"./nodebb start\" to launch the NodeBB server";
+			else
+				echo "NodeBB Running (pid $(cat pidfile))";
+				echo "  \"./nodebb stop\" to stop the NodeBB server";
+				echo "  \"./nodebb log\" to view server output";
+				echo "  \"./nodebb restart\" to restart NodeBB";
+		fi
+		;;
+
+	log)
+		clear;
+		tail -F ./logs/output.log;
+		;;
+
+	upgrade)
+		npm install
+		# ls -d node_modules/nodebb* | xargs -n1 basename | xargs npm install
+		# ls -d node_modules/nodebb* | xargs -n1 basename | xargs npm update
+		npm i nodebb-theme-vanilla nodebb-theme-lavender nodebb-widget-essentials
+		"$node" app --upgrade
+		touch package.json
+		;;
+
+	setup)
+		"$node" app --setup "$@"
+		;;
+
+	reset)
+		"$node" app --reset --$2
+		;;
+
+	dev)
+		echo "Launching NodeBB in \"development\" mode."
+		echo "To run the production build of NodeBB, please use \"forever\"."
+		echo "More Information: https://docs.nodebb.org/en/latest/running/index.html"
+		NODE_ENV=development "$node" loader --no-daemon "$@"
+		;;
+
+	watch)
+		echo "***************************************************************************"
+		echo "WARNING: ./nodebb watch will be deprecated soon. Please use grunt: "
+		echo "https://docs.nodebb.org/en/latest/running/index.html#grunt-development"
+		echo "***************************************************************************"
+		NODE_ENV=development supervisor -q --ignore public/templates,public/nodebb.min.js,public/nodebb.min.js.map --extensions 'node|js|tpl|less' -- app "$@"
+		;;
+
+	*)
+		echo "Welcome to NodeBB"
+		echo $"Usage: $0 {start|stop|reload|restart|log|setup|reset|upgrade|dev|watch}"
+		echo ''
+		column -s '	' -t <<< '
+		start	Start the NodeBB server
+		stop	Stops the NodeBB server
+		reload	Restarts NodeBB
+		restart	Restarts NodeBB
+		log	Opens the logging interface (useful for debugging)
+		setup	Runs the NodeBB setup script
+		reset	Disables all plugins, restores the default theme.
+		upgrade	Run NodeBB upgrade scripts, ensure packages are up-to-date
+		dev	Start NodeBB in interactive development mode
+		watch	Start NodeBB in development mode and watch for changes
+		'
+		exit 1
+esac
