@@ -1,0 +1,14 @@
+extends layout
+
+block header
+	title #{title}
+
+block content
+	for post in posts
+		article(class='post')
+			header
+				time= post.date.toDateString() 
+				h1 
+					a(href='#{host}#{post.permaLink}') #{post.title}
+			section !{post.body}
+				a(class='continue-reading',href='#{host}#{post.permaLink}') Read On →

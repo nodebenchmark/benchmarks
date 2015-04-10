@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding='utf-8'?>
+<service xmlns="http://purl.org/atom/app"
+         xmlns:atom="http://www.w3.org/2005/Atom">
+  <workspace>
+    <atom:title>Main Site</atom:title>
+    <collection
+        href="http://localhost:3000/" >
+      <atom:title>My Blog Entries</atom:title>
+   </collection>    
+  </workspace>
+</service>

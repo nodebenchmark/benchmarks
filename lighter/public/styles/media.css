@@ -1,0 +1,96 @@
+.layout body {
+  -webkit-text-size-adjust: auto;
+}
+.layout body header.main nav {
+  dispay: none;
+}
+.layout body header.main nav ul.main-navigation {
+  display: none;
+}
+.layout body section.main {
+  min-width: 0px;
+}
+.layout body section.main section.content section {
+  border-right: none;
+  width: 100%;
+  max-width: 100%;
+}
+.layout body section.main section.content section article img {
+  max-width: 100%;
+  height: auto;
+}
+.layout body section.main section.content aside {
+  display: none;
+}
+@media screen and (max-width: 768px) {
+  body {
+    -webkit-text-size-adjust: auto;
+  }
+  body header.main nav {
+    dispay: none;
+  }
+  body header.main nav ul.main-navigation {
+    display: none;
+  }
+  body section.main {
+    min-width: 0px;
+  }
+  body section.main section.content section {
+    border-right: none;
+    width: 100%;
+    max-width: 100%;
+  }
+  body section.main section.content section article img {
+    max-width: 100%;
+    height: auto;
+  }
+  body section.main section.content aside {
+    display: none;
+  }
+}
+@media screen and (max-width: 320px) {
+  body {
+    -webkit-text-size-adjust: auto;
+  }
+  body header.main nav {
+    dispay: none;
+  }
+  body header.main nav ul.main-navigation {
+    display: none;
+  }
+  body section.main {
+    min-width: 0px;
+  }
+  body section.main section.content section {
+    border-right: none;
+    width: 100%;
+    max-width: 100%;
+  }
+  body section.main section.content section article img {
+    max-width: 100%;
+    height: auto;
+  }
+  body section.main section.content aside {
+    display: none;
+  }
+  body header.main {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+  body section.main section.content section {
+    width: 100%;
+    padding-right: 0px;
+    padding-left: 0px;
+  }
+  body section.main section.content section article {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+  body section.main section.content section article header h1 {
+    font-size: 1.5em;
+  }
+  body footer {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+}

@@ -1,0 +1,12 @@
+doctype xml
+entry(xmlns='http://www.w3.org/2005/Atom')
+  title #{media.title}
+  id #{media._id}
+  updated #{media.date.toISOString()}
+  author
+    name #{author}
+  link(rel='edit-media', href='#{host}images/#{media.url}?media')
+  link(rel='edit', href='#{host}images/#{media.url}')
+  summary #{media.title}
+  content(type='#{media.type}', src='#{host}images/#{media.url}')
+ 

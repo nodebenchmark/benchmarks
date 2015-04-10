@@ -1,0 +1,4 @@
+node_modules/*
+azure_error
+azure.publishsettings
+newrelic_agent.log

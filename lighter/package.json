@@ -1,0 +1,44 @@
+{
+  "name": "lighter-blog-engine",
+  "version": "1.0.1",
+  "description": "Fast, responsive blog engine for geeks.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mehfuzh/lighter.git"
+  },
+  "dependencies": {
+    "express": "*",
+    "jade": ">= 0.0.1",
+    "less": ">=1.3.0",
+    "less-middleware": ">=0.1.4",
+    "mongoose": "*",
+    "mongodb": "*",
+    "highlight.js": "~8.0.0",
+    "marked": ">=0.2.6",
+    "xml2js": "~0.2.2",
+    "newrelic": "~0.9.19",
+    "node-promise": "~0.5.10",
+    "should": "~3.1.2",
+	"coffee-script": "*"
+  },
+  "scripts": {
+    "test": "mocha --compilers coffee:coffee-script/register -R spec",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=0.10.24",
+    "npm": ">=1.3.21"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "~3.1.2",
+    "coffee-script": "*",
+    "supertest": "~0.8.3",
+    "grunt": "~0.4.2",
+    "grunt-develop": "~0.3.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-nodemon": "~0.1.2",
+    "grunt-concurrent": "~0.4.2",
+    "grunt-contrib-coffee": "~0.8.0"
+  }
+}

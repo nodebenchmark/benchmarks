@@ -1,0 +1,4 @@
+doctype xml
+app:categories( xmlns:app='http://www.w3.org/2007/app', xmlns:atom='http://www.w3.org/2005/Atom')
+	for category in categories
+		atom:category(term='#{category.title}')

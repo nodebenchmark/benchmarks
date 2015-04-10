@@ -1,0 +1,13 @@
+doctype xml
+service(xmlns:app='http://www.w3.org/2007/app', xmlns:atom='http://www.w3.org/2005/Atom')
+	workspace
+		atom:title Main Site
+		app:collection(href='#{host}api/atom/feeds')
+			atom:title #{title}
+			app:categories(href='#{host}api/atom/categories')
+			accept entry
+		app:collection(href='#{host}api/atom/images')
+			atom:title Photos
+			accept image/*
+			
+			

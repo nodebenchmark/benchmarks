@@ -1,0 +1,35 @@
+extends layout
+
+block header	
+	meta(name='author', content='#{post.author}')
+	meta(name='keywords', content='#{post.categories.join()}')
+	meta(property='og:title', content='#{post.title.trim()}')
+	meta(property='og:url', content='#{host}#{post.permaLink}')
+	meta(property='og:type', content='website')
+	meta(property='og:image', content='#{host}logo.png')
+	meta(property='og:description', content='#{post.summary}')
+	title #{post.title.trim()}
+
+block content
+	article
+		header
+			time #{post.date.toDateString()}
+			h1 #{post.title}
+		section !{post.body}
+			for category in post.categories
+				div(class='category') #{category}
+		section(class='comments')
+			div(class='controls') Discussions
+			div(id='disqus_thread')
+	
+			script.
+				/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+				var disqus_shortname = 'mehfuzsblog';
+				var disqus_title = '#{post.title.trim()}';
+				/* * * DON'T EDIT BELOW THIS LINE * * */
+				(function() {
+					var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+					dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+					(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+				})();
+	

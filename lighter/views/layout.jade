@@ -1,0 +1,30 @@
+doctype html
+html
+	head
+		meta(name='generator', content='lighter blog engine')   
+		meta(name='viewport', content='width=device-width,initial-scale=1.0,maximum-scale=1.0')
+		block header
+		link(rel='stylesheet', href='/styles/style.css?v=1')
+		link(rel='stylesheet', href='/styles/media.css')
+		link(rel='stylesheet', href='/styles/highlight.css') 
+		link(rel='alternate', href='/api/atom/feeds/', title='#{title}', type='application/atom+xml')
+		link(rel='EditURI', type='application/rsd+xml', title='RSD', href='/rsd.xml') 
+		body
+			header(class='main')
+					h1
+						a(href='/') #{title}
+					nav
+						ul(class='main-navigation')
+							li
+								a(href= '/api/atom/feeds/') RSS  
+							li
+								a(href='https://github.com/mehfuzh/lighter') Source	
+			section(class='main')
+				section(class='content')
+					section
+						block content
+					aside
+						section
+							include recent
+			footer
+				p Copyright © 2013 - Mehfuz Hossain

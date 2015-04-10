@@ -1,0 +1,6 @@
+h1 Recent Posts
+ul 
+	for post in recent
+			li 
+				a(href='#{host}#{post.permaLink}') #{post.title}
+	
