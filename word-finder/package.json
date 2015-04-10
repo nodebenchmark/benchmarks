@@ -1,0 +1,23 @@
+{
+  "name": "word-finder",
+  "version": "0.0.4-28",
+  "description": "A website that will help you with 'Whats the Phrase' and 'Words With Friends'",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/amirrajan/word-finder.git"
+  },
+  "dependencies": {
+    "express": "~3.0.1",
+    "ejs": "~0.8.3",
+    "jasmine-node": "~1.0.26",
+    "underscore": "~1.4.2"
+  },
+  "subdomain": "word-finder",
+  "engines": {
+    "node": ">=0.8.x"
+  }
+}
