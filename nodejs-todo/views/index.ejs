@@ -1,0 +1,96 @@
+<% include header %>
+
+<script>
+$(function() {
+  $.getJSON("/todos", function(data) {
+    for(var key in data) {
+      addNewEntry(key, data[key]);
+    }
+
+    addNewEntry();
+  });
+});
+
+function addNewEntry(id, description) {
+  var entry = $($("#todotemplate").html());
+  entry.find(".save").click(function() { save(entry); });
+  entry.find(".description").keypress(function(e) {
+    if(e.which == 13) {
+      save(entry);
+    }
+  });
+
+  entry.find(".done").click(function() { remove(entry); });
+  entry.find(".description").attr("placeholder", "new todo");
+
+  $("#todos").prepend(entry);
+
+  entry.find(".description").focus();
+
+  if(id) {
+    entry.attr("id", id);
+    entry.find(".description").attr("placeholder", "update");
+    entry.find(".description").val(description);
+    entry.find(".done").attr("id", id);
+  } else {
+    entry.find(".done").hide();
+  }
+
+  return entry;
+}
+
+function flashSuccess(todo) {
+  todo.find(".save").html("success!");
+  setTimeout(function() {
+    todo.find(".save").html("save");
+  }, 1000);
+}
+
+function remove(todo) {
+  $.post('/todos/delete', { id: todo.attr("id") }, function() {
+    todo.fadeOut();
+  });
+}
+
+function save(todo) {
+  if(!todo.attr("id")) {
+    $.post('/todos/create', {
+      description: todo.find(".description").val()
+    }, function(data) {
+      todo.find(".description").attr("placeholder", "update");
+      todo.attr("id", data.id);
+      todo.find(".done").attr("id", data.id);
+      todo.find(".done").show();
+      flashSuccess(todo);
+      addNewEntry();
+    });
+  } else {
+    $.post('/todos/update', {
+      id: todo.attr("id"),
+      description: todo.find(".description").val()
+    }, function(data) {
+      flashSuccess(todo);
+      todo.find(".save").html("success!");
+    });
+  }
+}
+</script>
+
+<script id="todotemplate" type="template">
+<div class="col-md-12">
+  <input type="text" class="col-md-8 description" />
+  <div class="col-md-2">
+    <a href="javascript:;" class="save">save</a>
+  </div>
+  <div class="col-md-1">
+    <a href="javascript:;" class="done">done</a>
+  </div>
+  <br/>
+  <br/>
+</div>
+</script>
+
+<div class="row" id="todos">
+</div>
+
+<% include footer %>
