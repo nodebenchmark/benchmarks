@@ -1,0 +1,80 @@
+#!/bin/env python2.7
+
+import argparse, yaml
+import subprocess, sys, time, os
+from itertools import ifilter
+
+parser = argparse.ArgumentParser(description="NodeBench benchmarking harness.")
+parser.add_argument("-l", "--list-benchmarks", action="store_true",
+                    dest="list_bencharks", help="list benchmarks")
+parser.add_argument("-n", "--node-binary", dest="node_binary", 
+                    help="node binary to use", default="node")
+parser.add_argument("-b", "--benchmark", dest="benchmark")
+parser.add_argument("-i", "--instrumentation", dest="instrumentation", default="")
+parser.add_argument("-r", "--request-generator", dest="request_generator")
+parser.add_argument("-m", "--mode", dest="mode", help="mode to replay clients", default="sequential")
+parser.add_argument("-c", "--clients", dest="clients", help="number of clients", default=1)
+parser.add_argument("-s", "--seed", dest ="seed", help="seed for client interleaving", default=7)
+
+args = parser.parse_args()
+node_binary = args.node_binary
+benchmark = args.benchmark
+instrumentation = args.instrumentation
+mode = args.mode
+clients = args.clients
+iseed = args.seed
+
+benchmark_registry = {
+    "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js",
+                        "request_script" : "etherpad_requests.py" },
+}
+
+basedir = os.getcwd()
+
+print "benchmark is %s" % benchmark
+
+benchmark_info = benchmark_registry[benchmark]
+benchmark_dir = benchmark
+startup_script = benchmark_info["startup_script"]
+request_script = benchmark_info["request_script"]
+
+os.chdir(benchmark_dir)
+
+node_run_cmd = "%s %s %s" % (instrumentation, node_binary, startup_script)
+
+node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
+for line in iter(node.stdout.readline, ''):
+    print line
+    if "BEGIN SENDING HTTP REQUESTS" in line:
+        time.sleep(30)
+	files = filter(lambda f: "_nodebench.py" in f, [d for d in os.listdir('.')])
+        execfile(files[0]) # TODO make work for multiple files
+        break
+
+if mode == 'parallel':
+    pass
+    # p = Pool(num_threads)
+    # p.map(single_client_execute, range(num_client))
+else: # sequential by default
+    queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
+    seed(iseed) # do no remove this!
+    shuffle(queue)
+    print queue
+    state = [ 0 for i in range(clients) ]
+    for padID in queue:
+        while True:
+            try:
+                user_requests[state[padID]](padID)
+                state[padID] += 1
+                break
+            except:
+                print "Waiting for server to initialize"
+                time.sleep(30)
+                continue
+
+assert all(s == len(user_requests) for s in state), "All requests did not execute"
+node.kill()
+for line in iter(node.stdout.readline, ''):
+    print line
+
+os.chdir(basedir)
