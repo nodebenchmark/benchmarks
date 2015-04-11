@@ -22,5 +22,6 @@ app.post('/search', function (req, res) {
   res.render('result', { words: result, pattern: req.body.pattern });
 });
 
-app.listen(process.env.PORT || config.port);
-console.log("Listening on port: " + (process.env.PORT || config.port));
+app.listen(process.env.PORT || config.port, config.host);
+console.log("Listening on " + config.host + ":" + config.port);
+console.log("BEGIN SENDING HTTP REQUESTS");
