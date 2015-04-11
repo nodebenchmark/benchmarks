@@ -50,20 +50,3 @@ user_requests = [
             partial(set_text, text='world!'),
             partial(delete_pad)
 ]
-#
-#if mode == 'parallel':
-#    pass
-#    # p = Pool(num_threads)
-#    # p.map(single_client_execute, range(num_client))
-#else: # sequential by default
-#    queue = [ i for i in range(num_clients) for j in range(len(user_requests)) ]
-#    seed(7) # do no remove this!
-#    shuffle(queue)
-#    print queue
-#    state = [ 0 for i in range(num_clients) ]
-#    for padID in queue:
-#        user_requests[state[padID]](padID)
-#        state[padID] += 1
-#
-#print all(s == len(user_requests) for s in state)
-#print "done"
