@@ -30,6 +30,7 @@ benchmark_registry = {
     "lets-chat" : { "startup_script" : "app.js" },
     "lighter" : { "startup_script" : "server.js" },
     "nodejs-todo" : { "startup_script" : "server.js" },
+    "nodejs-mud" : { "startup_script" : "server.js" },
 }
 
 basedir = os.getcwd()

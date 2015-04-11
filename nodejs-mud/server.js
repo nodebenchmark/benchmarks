@@ -1,5 +1,5 @@
-var HOST = null;
-var PORT = 8080;
+var HOST = '0.0.0.0';
+var PORT = 50004;
 
 var GRID_SIZE = 10;
 
@@ -42,7 +42,8 @@ function destroyID(id) {
 }
 
 function genCoordPoint() {
-	return Math.floor(Math.random() * GRID_SIZE);
+	//return Math.floor(Math.random() * GRID_SIZE);
+	return GRID_SIZE / 2;
 }
 
 function setPos(id, row, col) {
@@ -51,6 +52,7 @@ function setPos(id, row, col) {
 }
 
 function getPos(id) {
+	console.log(positions);
 	return positions[id];
 }
 
@@ -139,3 +141,5 @@ fu.get("/part", function(request, response) {
 	
 	mud.flush();
 });
+
+console.log("BEGIN SENDING HTTP REQUESTS");

@@ -3,7 +3,7 @@
 import requests, json
 from functools import partial
 
-lets_chat_api_url = 'http://146.6.177.23:50004'
+todo_api_url = 'http://146.6.177.23:50003'
 
 def post(url, data):
     headers = {'content-type': 'application/json'}
@@ -20,14 +20,14 @@ def delete(url):
 
 def post_todo(todoID, description):
     data = json.dumps({ 'description' : description })
-    r = post('%s/todos/create' % lets_chat_api_url, data)
+    r = post('%s/todos/create' % todo_api_url, data)
     if todoID not in ids:
         ids[todoID] = [] 
     ids[todoID].append(json.loads(r)['id'])
 
 def delete_todo(todoID):
     data = json.dumps({ 'id' : ids[todoID].pop() })
-    return post('%s/todos/delete' % lets_chat_api_url, data)
+    return post('%s/todos/delete' % todo_api_url, data)
 
 ids = {}
 
