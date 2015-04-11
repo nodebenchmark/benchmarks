@@ -1,11 +1,7 @@
 #!/usr/bin/python
 
-import requests, json, time, sys
-from multiprocessing import Pool
+import requests
 from functools import partial
-from random import seed, shuffle
-from copy import copy, deepcopy
-from StringIO import StringIO
 
 lets_chat_api_url = 'http://146.6.177.23:50001'
 

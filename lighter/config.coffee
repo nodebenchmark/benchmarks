@@ -1,7 +1,7 @@
 express = require 'express'
 util = require 'util'
 config = (app)->
-		app.set('port', process.env.PORT || 3000)
+		app.set('port', process.env.PORT || 30000)
 		app.set('views', __dirname + '/views')
 		app.set('view engine', 'jade')
 		app.use(express.favicon(__dirname + '/public/favicon.ico'))

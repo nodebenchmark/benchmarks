@@ -3,6 +3,7 @@
 import argparse, yaml
 import subprocess, sys, time, os
 from itertools import ifilter
+from random import seed, shuffle
 
 parser = argparse.ArgumentParser(description="NodeBench benchmarking harness.")
 parser.add_argument("-l", "--list-benchmarks", action="store_true",
@@ -25,8 +26,9 @@ clients = args.clients
 iseed = args.seed
 
 benchmark_registry = {
-    "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js",
-                        "request_script" : "etherpad_requests.py" },
+    "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js"},
+    "lets-chat" : { "startup_script" : "app.js" },
+    "lighter" : { "startup_script" : "server.js" },
 }
 
 basedir = os.getcwd()
@@ -36,7 +38,6 @@ print "benchmark is %s" % benchmark
 benchmark_info = benchmark_registry[benchmark]
 benchmark_dir = benchmark
 startup_script = benchmark_info["startup_script"]
-request_script = benchmark_info["request_script"]
 
 os.chdir(benchmark_dir)
 
@@ -67,8 +68,8 @@ else: # sequential by default
                 user_requests[state[padID]](padID)
                 state[padID] += 1
                 break
-            except:
-                print "Waiting for server to initialize"
+            except Exception, err:
+                print Exception, err
                 time.sleep(30)
                 continue
 

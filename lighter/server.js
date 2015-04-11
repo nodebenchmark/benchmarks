@@ -19,6 +19,7 @@ var user = require(__dirname + '/modules/user')(settings);
 user.init(function(data){ 
   if (data._id){
 		console.log('Initializing of user %s is completed',  data.username);
+	        console.log("BEGIN SENDING HTTP REQUESTS");	
 	}
 });
 
@@ -28,5 +29,5 @@ require (__dirname +'/modules/builder')(app, settings);
 require('./routes')(app, settings);
 
 http.createServer(app).listen(app.get('port'), function(){
-  	console.log("Express server listening on port " + app.get('port'));
+    console.log("Express server listening on port " + app.get('port'));
 });
