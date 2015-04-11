@@ -17,6 +17,7 @@ exports.createServer = function () {
   exports.restartServer();
 
   console.log("You can access your Etherpad instance at http://" + settings.ip + ":" + settings.port + "/");
+  console.log("BEGIN SENDING HTTP REQUESTS");
   if(!_.isEmpty(settings.users)){
     console.log("The plugin admin page is at http://" + settings.ip + ":" + settings.port + "/admin/plugins");
   }
