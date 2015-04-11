@@ -25,7 +25,7 @@ module.exports = function() {
     // Routes
     //
     app.route('/messages')
-        .all(middlewares.requireLogin)
+        //.all(middlewares.requireLogin)
         .get(function(req, res) {
             req.io.route('messages:list');
         })
@@ -34,7 +34,8 @@ module.exports = function() {
         });
 
     app.route('/rooms/:room/messages')
-        .all(middlewares.requireLogin, middlewares.roomRoute)
+        //.all(middlewares.requireLogin, middlewares.roomRoute)
+        .all(middlewares.roomRoute)
         .get(function(req, res) {
             req.io.route('messages:list');
         })
@@ -48,7 +49,7 @@ module.exports = function() {
     app.io.route('messages', {
         create: function(req, res) {
             var options = {
-                    owner: req.user._id,
+                    //owner: req.user._id,
                     room: req.param('room'),
                     text: req.param('text')
                 };

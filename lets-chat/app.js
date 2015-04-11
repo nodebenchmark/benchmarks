@@ -4,8 +4,6 @@
 
 'use strict';
 
-process.title = "letschat";
-
 var _ = require('lodash'),
     fs = require('fs'),
     colors = require('colors'),
@@ -191,9 +189,11 @@ mongoose.connection.on('disconnected', function() {
 function startApp() {
     var port = httpsEnabled && settings.https.port ||
                httpEnabled && settings.http.port;
+	console.log("port is " + port);
 
     var host = httpsEnabled && settings.https.host ||
                httpEnabled && settings.http.host || '0.0.0.0';
+	console.log("host is " + host);
 
 
 
@@ -220,6 +220,7 @@ function startApp() {
 
     var art = fs.readFileSync('./app/misc/art.txt', 'utf8');
     console.log('\n' + art + '\n\n' + 'Release ' + psjon.version.yellow + '\n');
+    console.log("BEGIN SENDING HTTP REQUESTS");
 }
 
 function checkForMongoTextSearch() {

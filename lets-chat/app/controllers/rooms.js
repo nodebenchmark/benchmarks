@@ -47,7 +47,7 @@ module.exports = function() {
     // Routes
     //
     app.route('/rooms')
-        .all(middlewares.requireLogin)
+        //.all(middlewares.requireLogin)
         .get(function(req, res) {
             req.io.route('rooms:list');
         })
@@ -56,7 +56,8 @@ module.exports = function() {
         });
 
     app.route('/rooms/:room')
-        .all(middlewares.requireLogin, middlewares.roomRoute)
+        //.all(middlewares.requireLogin, middlewares.roomRoute)
+        .all(middlewares.roomRoute)
         .get(function(req, res) {
             req.io.route('rooms:get');
         })
@@ -68,7 +69,8 @@ module.exports = function() {
         });
 
     app.route('/rooms/:room/users')
-        .all(middlewares.requireLogin, middlewares.roomRoute)
+        //.all(middlewares.requireLogin, middlewares.roomRoute)
+        .all(middlewares.roomRoute)
         .get(function(req, res) {
             req.io.route('rooms:users');
         });
@@ -131,7 +133,7 @@ module.exports = function() {
         },
         create: function(req, res) {
             var options = {
-                    owner: req.user._id,
+                    //owner: req.user._id,
                     name: req.param('name'),
                     slug: req.param('slug'),
                     description: req.param('description')

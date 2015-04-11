@@ -31,11 +31,11 @@ var RoomSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    owner: {
-		type: ObjectId,
-		ref: 'User',
-        required: true
-    },
+   // owner: {
+//		type: ObjectId,
+//		ref: 'User',
+ //       required: true
+  //  },
 	messages: [{
 		type: ObjectId,
 		ref: 'Message'

@@ -68,7 +68,8 @@ RoomManager.prototype.archive = function(roomId, cb) {
         }
 
         room.archived = true;
-        room.save(function(err, room) {
+        //room.save(function(err, room) {
+        room.remove(function(err, room) {
             if (err) {
                 console.error(err);
                 return cb(err);
@@ -79,6 +80,7 @@ RoomManager.prototype.archive = function(roomId, cb) {
         }.bind(this));
     }.bind(this));
 };
+
 
 RoomManager.prototype.list = function(options, cb) {
     options = options || {};

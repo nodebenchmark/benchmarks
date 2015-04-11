@@ -1,0 +1,7 @@
+node_modules
+coverage.html
+npm-debug.log
+.DS_Store
+builtAssets/
+testBuiltAssets/
+testBuiltAssetsFoo/

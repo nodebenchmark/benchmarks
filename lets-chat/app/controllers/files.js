@@ -43,7 +43,7 @@ module.exports = function() {
     // Routes
     //
     app.route('/files')
-        .all(middlewares.requireLogin)
+        //.all(middlewares.requireLogin)
         .get(function(req, res) {
             req.io.route('files:list');
         })
@@ -52,7 +52,8 @@ module.exports = function() {
         });
 
     app.route('/rooms/:room/files')
-        .all(middlewares.requireLogin, middlewares.roomRoute)
+        //.all(middlewares.requireLogin, middlewares.roomRoute)
+        .all(middlewares.roomRoute)
         .get(function(req, res) {
             req.io.route('files:list');
         })
@@ -61,7 +62,7 @@ module.exports = function() {
         });
 
     app.route('/files/:id/:name')
-        .all(middlewares.requireLogin)
+        //.all(middlewares.requireLogin)
         .get(function(req, res) {
             models.file.findById(req.params.id, function(err, file) {
                 if (err) {

@@ -13,11 +13,11 @@ var MessageSchema = new mongoose.Schema({
         ref: 'Room',
         required: true
     },
-    owner: {
-        type: ObjectId,
-        ref: 'User',
-        required: true
-    },
+    //owner: {
+    //    type: ObjectId,
+    //    ref: 'User',
+    //    required: true
+    //},
     text: {
         type: String,
         required: true,
