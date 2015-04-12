@@ -246,7 +246,7 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
     double mispredict = 100.0l * (double)incorrect / ((double)correct + (double)incorrect);
 
     *out <<  "===============================================" << endl;
-    *out <<  "BranchPredictor analysis results: " << endl;
+    *out <<  "Thread " << threadId << " BranchPredictor analysis results: " << endl;
     *out <<  "Number of correctly predicted branches: " << correct  << endl;
     *out <<  "Number of incorrectly predicted branches: " << incorrect  << endl;
     *out <<  "Branch mispredition rate: " << mispredict << "%" << endl;
