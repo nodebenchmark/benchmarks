@@ -44,7 +44,7 @@ END_LEGAL */
 #include <iostream>
 #include <fstream>
 
-#include "icache.H"
+#include "cache.H"
 #include "pin_profile.H"
 
 #include <stdlib.h>
@@ -109,7 +109,7 @@ INT32 Usage()
 // wrap configuation constants into their own name space to avoid name clashes
 namespace DL1
 {
-    const UINT32 max_sets = KILO; // cacheSize / (lineSize * associativity);
+    const UINT32 max_sets = 16 * KILO; // cacheSize / (lineSize * associativity);
     const UINT32 max_associativity = 16; // associativity;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
 
@@ -119,7 +119,7 @@ namespace DL1
 
 namespace IL1
 {
-    const UINT32 max_sets = 2 * KILO; // cacheSize / (lineSize * associativity);
+    const UINT32 max_sets = 16 * KILO; // cacheSize / (lineSize * associativity);
     const UINT32 max_associativity = 16; // associativity;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
 
