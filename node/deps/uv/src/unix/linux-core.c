@@ -123,6 +123,16 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
     uv__epoll_ctl(loop->backend_fd, UV__EPOLL_CTL_DEL, fd, &dummy);
 }
 
+void __attribute__((noinline)) pin_start()
+{
+    asm("");
+}
+
+void __attribute__((noinline)) pin_end()
+{
+    asm("");
+}
+
 
 void uv__io_poll(uv_loop_t* loop, int timeout) {
   static int no_epoll_pwait;
@@ -305,7 +315,9 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
         pe->events |= w->pevents & (UV__EPOLLIN | UV__EPOLLOUT);
 
       if (pe->events != 0) {
+		pin_start();
         w->cb(loop, w, pe->events);
+		pin_end();
         nevents++;
       }
     }
