@@ -1,6 +1,7 @@
 #!/bin/env python2.7
 
-import argparse, yaml
+import argparse
+import signal
 import subprocess, sys, time, os
 from itertools import ifilter
 from random import seed, shuffle
@@ -14,8 +15,8 @@ parser.add_argument("-b", "--benchmark", dest="benchmark")
 parser.add_argument("-i", "--instrumentation", dest="instrumentation", default="")
 parser.add_argument("-r", "--request-generator", dest="request_generator")
 parser.add_argument("-m", "--mode", dest="mode", help="mode to replay clients", default="sequential")
-parser.add_argument("-c", "--clients", dest="clients", help="number of clients", default=1)
-parser.add_argument("-s", "--seed", dest ="seed", help="seed for client interleaving", default=7)
+parser.add_argument("-c", "--clients", dest="clients", help="number of clients", default=1, type=int)
+parser.add_argument("-s", "--seed", dest ="seed", help="seed for client interleaving", default=7, type=int)
 
 args = parser.parse_args()
 node_binary = args.node_binary
@@ -45,10 +46,11 @@ startup_script = benchmark_info["startup_script"]
 os.chdir(benchmark_dir)
 
 node_run_cmd = "%s %s %s" % (instrumentation, node_binary, startup_script)
+print node_run_cmd
 
 node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
 for line in iter(node.stdout.readline, ''):
-    print line
+    print line.strip("\r\n")
     if "BEGIN SENDING HTTP REQUESTS" in line:
         time.sleep(30)
 	files = filter(lambda f: "_nodebench.py" in f, [d for d in os.listdir('.')])
@@ -65,11 +67,12 @@ else: # sequential by default
     shuffle(queue)
     print queue
     state = [ 0 for i in range(clients) ]
-    for padID in queue:
+    for ID in queue:
+        print ID
         while True:
             try:
-                user_requests[state[padID]](padID)
-                state[padID] += 1
+                user_requests[state[ID]](ID)
+                state[ID] += 1
                 break
             except Exception, err:
                 print Exception, err
@@ -77,8 +80,8 @@ else: # sequential by default
                 continue
 
 assert all(s == len(user_requests) for s in state), "All requests did not execute"
-node.kill()
+node.send_signal(signal.SIGINT)
 for line in iter(node.stdout.readline, ''):
-    print line
+    print line.strip("\r\n")
 
 os.chdir(basedir)
