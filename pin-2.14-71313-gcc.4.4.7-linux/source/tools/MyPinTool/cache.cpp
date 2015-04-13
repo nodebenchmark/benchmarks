@@ -56,8 +56,13 @@ PIN_LOCK lock;
 /* Commandline Switches */
 /* ===================================================================== */
 
+KNOB<BOOL> KnobICEnable(KNOB_MODE_WRITEONCE,    "pintool",
+    "ienable", "0", "enable icache simulation");
+KNOB<BOOL> KnobDCEnable(KNOB_MODE_WRITEONCE,    "pintool",
+    "denable", "0", "enable dcache simulation");
+
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE,    "pintool",
-    "o", "icache.out", "specify icache file name");
+    "o", "cache.out", "specify icache file name");
 KNOB<BOOL>   KnobTrackLoads(KNOB_MODE_WRITEONCE,    "pintool",
     "tl", "0", "track individual loads -- increases profiling time");
 KNOB<BOOL>   KnobTrackStores(KNOB_MODE_WRITEONCE,   "pintool",
@@ -385,7 +390,8 @@ VOID Instruction(INS ins, void * v)
         }
     }
 
-    {
+    if( KnobICEnable )
+	{
         // All instructions go to the instruction cache
         const ADDRINT iaddr = INS_Address(ins);
         const UINT32 instId = profile.Map(iaddr);
@@ -409,117 +415,119 @@ VOID Instruction(INS ins, void * v)
         }
     }
 
-    if (INS_IsMemoryRead(ins))
-    {
-        // map sparse INS addresses to dense IDs
-        const ADDRINT iaddr = INS_Address(ins);
-        const UINT32 instId = profile.Map(iaddr);
+    if( KnobDCEnable )
+	{
+    	if (INS_IsMemoryRead(ins))
+    	{
+    	    // map sparse INS addresses to dense IDs
+    	    const ADDRINT iaddr = INS_Address(ins);
+    	    const UINT32 instId = profile.Map(iaddr);
 
-        const UINT32 size = INS_MemoryReadSize(ins);
-        const BOOL   single = (size <= 4);
+    	    const UINT32 size = INS_MemoryReadSize(ins);
+    	    const BOOL   single = (size <= 4);
 
-        if( KnobTrackLoads )
-        {
-            if( single )
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE, (AFUNPTR) LoadSingle,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYREAD_EA,
-                    IARG_UINT32, instId,
-                    IARG_END);
-            }
-            else
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) LoadMulti,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYREAD_EA,
-                    IARG_MEMORYREAD_SIZE,
-                    IARG_UINT32, instId,
-                    IARG_END);
-            }
-                
-        }
-        else
-        {
-            if( single )
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) LoadSingleFast,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYREAD_EA,
-                    IARG_END);
-                        
-            }
-            else
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) LoadMultiFast,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYREAD_EA,
-                    IARG_MEMORYREAD_SIZE,
-                    IARG_END);
-            }
-        }
-    }
-        
-    if ( INS_IsMemoryWrite(ins) )
-    {
-        // map sparse INS addresses to dense IDs
-        const ADDRINT iaddr = INS_Address(ins);
-        const UINT32 instId = profile.Map(iaddr);
-            
-        const UINT32 size = INS_MemoryWriteSize(ins);
+    	    if( KnobTrackLoads )
+    	    {
+    	        if( single )
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE, (AFUNPTR) LoadSingle,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYREAD_EA,
+    	                IARG_UINT32, instId,
+    	                IARG_END);
+    	        }
+    	        else
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) LoadMulti,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYREAD_EA,
+    	                IARG_MEMORYREAD_SIZE,
+    	                IARG_UINT32, instId,
+    	                IARG_END);
+    	        }
+    	            
+    	    }
+    	    else
+    	    {
+    	        if( single )
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) LoadSingleFast,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYREAD_EA,
+    	                IARG_END);
+    	                    
+    	        }
+    	        else
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) LoadMultiFast,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYREAD_EA,
+    	                IARG_MEMORYREAD_SIZE,
+    	                IARG_END);
+    	        }
+    	    }
+    	}
+    	    
+    	if ( INS_IsMemoryWrite(ins) )
+    	{
+    	    // map sparse INS addresses to dense IDs
+    	    const ADDRINT iaddr = INS_Address(ins);
+    	    const UINT32 instId = profile.Map(iaddr);
+    	        
+    	    const UINT32 size = INS_MemoryWriteSize(ins);
 
-        const BOOL   single = (size <= 4);
-                
-        if( KnobTrackStores )
-        {
-            if( single )
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) StoreSingle,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYWRITE_EA,
-                    IARG_UINT32, instId,
-                    IARG_END);
-            }
-            else
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) StoreMulti,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYWRITE_EA,
-                    IARG_MEMORYWRITE_SIZE,
-                    IARG_UINT32, instId,
-                    IARG_END);
-            }
-                
-        }
-        else
-        {
-            if( single )
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) StoreSingleFast,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYWRITE_EA,
-                    IARG_END);
-                        
-            }
-            else
-            {
-                INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE,  (AFUNPTR) StoreMultiFast,
-                    IARG_THREAD_ID,
-                    IARG_MEMORYWRITE_EA,
-                    IARG_MEMORYWRITE_SIZE,
-                    IARG_END);
-            }
-        }
-            
-    }
+    	    const BOOL   single = (size <= 4);
+    	            
+    	    if( KnobTrackStores )
+    	    {
+    	        if( single )
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) StoreSingle,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYWRITE_EA,
+    	                IARG_UINT32, instId,
+    	                IARG_END);
+    	        }
+    	        else
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) StoreMulti,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYWRITE_EA,
+    	                IARG_MEMORYWRITE_SIZE,
+    	                IARG_UINT32, instId,
+    	                IARG_END);
+    	        }
+    	            
+    	    }
+    	    else
+    	    {
+    	        if( single )
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) StoreSingleFast,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYWRITE_EA,
+    	                IARG_END);
+    	                    
+    	        }
+    	        else
+    	        {
+    	            INS_InsertPredicatedCall(
+    	                ins, IPOINT_BEFORE,  (AFUNPTR) StoreMultiFast,
+    	                IARG_THREAD_ID,
+    	                IARG_MEMORYWRITE_EA,
+    	                IARG_MEMORYWRITE_SIZE,
+    	                IARG_END);
+    	        }
+    	    }
+    	}
+	}
 }
 
 /* ===================================================================== */
@@ -545,39 +553,40 @@ VOID FiniThread(THREADID threadId, const CONTEXT *ctxt, int code, VOID * v)
 {
     PIN_GetLock(&lock, threadId+1);
 
-    il1[threadId]->Instructions(insts[threadId]);
-    dl1[threadId]->Instructions(insts[threadId]);
-    //l2->Instructions(insts[threadId]);
-
-    // print D-cache profile
-    // @todo what does this print
-
     //outFile << "PIN:MEMLATENCIES 1.0. 0x0\n";
-    outFile << "Thread " << threadId << " cache statistics\n";
+   	outFile << "Thread " << threadId << " cache statistics\n";
+    if( KnobDCEnable )
+	{
+    	dl1[threadId]->Instructions(insts[threadId]);
+    	outFile <<
+    	    "#\n"
+    	    "# DCACHE stats\n"
+    	    "#\n";
 
-    outFile <<
-        "#\n"
-        "# DCACHE stats\n"
-        "#\n";
+    	outFile << dl1[threadId]->StatsLong("# ", CACHE_BASE::CACHE_TYPE_DCACHE);
 
-    outFile << dl1[threadId]->StatsLong("# ", CACHE_BASE::CACHE_TYPE_DCACHE);
+    	if( KnobTrackLoads || KnobTrackStores ) {
+    	    outFile <<
+    	        "#\n"
+    	        "# LOAD stats\n"
+    	        "#\n";
 
-    if( KnobTrackLoads || KnobTrackStores ) {
-        outFile <<
-            "#\n"
-            "# LOAD stats\n"
-            "#\n";
+    	    outFile << profile.StringLong();
+    	}
+	}
 
-        outFile << profile.StringLong();
-    }
+    if( KnobICEnable )
+	{
+    	il1[threadId]->Instructions(insts[threadId]);
+    	outFile <<
+    	    "#\n"
+    	    "# ICACHE stats\n"
+    	    "#\n";
 
-    outFile <<
-        "#\n"
-        "# ICACHE stats\n"
-        "#\n";
+    	outFile << il1[threadId]->StatsLong("# ", CACHE_BASE::CACHE_TYPE_ICACHE);
+	}
 
-    outFile << il1[threadId]->StatsLong("# ", CACHE_BASE::CACHE_TYPE_ICACHE);
-
+    //l2->Instructions(insts[threadId]);
     //outFile <<
     //    "#\n"
     //    "# L2 CACHE stats\n"
