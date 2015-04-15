@@ -531,6 +531,7 @@ VOID EnableTracking(THREADID threadId)
 {
     assert(!enabled[threadId]);
     enabled[threadId] = true;
+	cout << "event start" << endl;
 }
 
 /* ===================================================================== */
@@ -539,6 +540,7 @@ VOID DisableTracking(THREADID threadId)
 {
     assert(enabled[threadId]);
     enabled[threadId] = false;
+	cout << "event stop" << endl;
 }
 
 /* ===================================================================== */
@@ -552,8 +554,10 @@ VOID PinControls(INS ins, void *v)
             if (RTN_Valid(rtn)) {
                 string rtn_name = RTN_Name(rtn);
                 if (rtn_name == "pin_start") {
+					cout << "start found" << endl;
                     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableTracking, IARG_THREAD_ID, IARG_END);
                 } else if (rtn_name == "pin_end") {
+					cout << "stop found" << endl;
                     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableTracking, IARG_THREAD_ID, IARG_END);
                 }
             }
