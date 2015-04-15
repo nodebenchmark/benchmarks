@@ -47,6 +47,10 @@ elif [ "$mode" = "tlb" ]; then
 			sh client.sh $app $mode $sets $ways
 		done
 	done
+elif [ "$mode" = "inscount" ]; then
+	sh client.sh $app $mode
+elif [ "$mode" = "insmix" ]; then
+	sh client.sh $app $mode
 else
 	echo "which mode? [cache/bp/tlb]"
 fi

@@ -36,6 +36,12 @@ elif [ "$mode" = "tlb" ]; then
 	ways=$4
 	instrumentation="$PIN_HOME/pin.sh -t $PIN_HOME/source/tools/MyPinTool/obj-intel64/tlbs.so -l1-sets $sets -l1-ways $ways -o tlbsim.out.${sets}.${ways} -- "
 	./nodebench -i "$instrumentation" -n $NODE_HOME/node -b $app -c 5
+elif [ "$mode" = "inscount" ]; then
+	instrumentation="$PIN_HOME/pin.sh -t $PIN_HOME/source/tools/MyPinTool/obj-intel64/inscount.so -o inscount.out -- "
+	./nodebench -i "$instrumentation" -n $NODE_HOME/node -b $app -c 5
+elif [ "$mode" = "insmix" ]; then
+	instrumentation="$PIN_HOME/pin.sh -t $PIN_HOME/source/tools/Mica/obj-intel64/mica.so -o insmix.out -- "
+	./nodebench -i "$instrumentation" -n $NODE_HOME/node -b $app -c 5
 fi
 
 #/group/users/yzhu/pinplay-drdebug-2.1-pin-2.14-71313-gcc.4.4.7-linux/pin.sh -t /group/users/yzhu/pinplay-drdebug-2.1-pin-2.14-71313-gcc.4.4.7-linux/source/tools/MyPinTool/obj-intel64/icache.so -- /group/users/yzhu/node/node /group/users/yzhu/nodebench/etherpad-lite/node_modules/ep_etherpad-lite/node/server.js &
