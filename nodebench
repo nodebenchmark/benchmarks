@@ -17,6 +17,7 @@ parser.add_argument("-r", "--request-generator", dest="request_generator")
 parser.add_argument("-m", "--mode", dest="mode", help="mode to replay clients", default="sequential")
 parser.add_argument("-c", "--clients", dest="clients", help="number of clients", default=1, type=int)
 parser.add_argument("-s", "--seed", dest ="seed", help="seed for client interleaving", default=7, type=int)
+parser.add_argument("-o", "--order", dest ="order", help="client ordering", default="shuffled")
 
 args = parser.parse_args()
 node_binary = args.node_binary
@@ -25,6 +26,7 @@ instrumentation = args.instrumentation
 mode = args.mode
 clients = args.clients
 iseed = args.seed
+order = args.order
 
 benchmark_registry = {
     "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js"},
@@ -62,9 +64,14 @@ if mode == 'parallel':
     # p = Pool(num_threads)
     # p.map(single_client_execute, range(num_client))
 else: # sequential by default
-    queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
-    seed(iseed) # do no remove this!
-    shuffle(queue)
+    if order == 'requests':
+        queue = [ i for j in range(len(user_requests)) for i in range(clients) ]
+    elif order == 'users':
+        queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
+    elif order == 'shuffled':
+        queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
+        seed(iseed) # do no remove this!
+        shuffle(queue)
     print queue
     state = [ 0 for i in range(clients) ]
     for ID in queue:
