@@ -1,0 +1,120 @@
+March 26th 2012
+---------------
+
+MICA v0.40
+
+- contributions by Hamid Fadishei:
+    * append_pid config entry added by Hamid Fadishei, mainly for multiprocess binaries
+    * some warning messages resolved
+
+Aug. 29th 2011
+---------------
+
+MICA v0.32
+
+- significant code cleanup by Petr Tuma; notes:
+        * cleaned up some redundant NULL pointer casts
+        * cleaned up names of LRU stack entry references
+        * systematic testing of malloc return value in most of the tool code
+        * added warning on presence of multiple threads
+        * replaced sprintf with string streams
+	* added branch prediction hints using __builtin_expect where appropriate
+- guard tracking progress in mica_progress.txt with a preprocessor flag (-DVERBOSE)
+- test MICA built using the Intel C++ compiler, and document how to build it using
+  icpc in the README (TODO: benchmark the performance difference)
+
+February 28th 2011
+------------------
+
+MICA v0.31
+
+- improved config file parsing, i.e. remove dependency on order of entries
+
+- updated README file
+	- describe some details regarding instruction mix
+
+February 27th 2011
+------------------
+
+MICA v0.3
+
+- increased flexibility of itypes analysis significantly
+        - instruction groups used in itypes analysis can be specified by the user now,
+          using a itypes.spec file; specify the filename in mica.conf using an entry like:
+                itypes_spec_file: <filename>
+        - by default, the old instruction groups are used
+          (except for SYSCALL, which was added to the group formely known as 'other')
+- made block size in ilp, memfootprint and memreusedist flexible
+        - size can be set by specifying 'block_size: <power of 2>' in the mica.conf file
+        - default block size is 2^6 (64) bytes, which is a change compared to MICA v0.23 for ilp
+- made page size in memfootprint flexible
+        - size can be set by specifying 'page_size: <power of 2>' in the mica.conf file
+        - default page size is 4096 (2^12) bytes
+- possibly expensive assert statements and other sanity checks were removed
+- bug fixes:
+        - memory read size wasn't being used 100% correctly
+          in ilp, memfootprint, memreusedist and stride analysis,
+          the size was being added to the start address of the read,
+          while (size-1) should be added; otherwise, e.g. for memfootprint,
+          we count an extra block being touched if the access is near a block boundary
+        - a small problem with an assert statement was fixed in memfootprint (>= 0 instead of >)
+        - fprintf statements were fixed for 64-bit systems
+
+
+September 22th 2009
+-------------------
+
+MICA v0.23
+
+Several people have reported small problems when MICA is being used with
+recent Pin kits. This small patch release should resolve these issues.
+
+- bug fixes:
+        * adjusted makefile and README according to Pin kit directory tree changes
+        * adjust mica_itypes.cpp to recognize both NOP and WIDENOP categories
+
+
+June 13th 2008
+--------------
+
+MICA v0.22
+
+- bug fixes in itypes:
+	* fixed issue with instructions in MISC category being counted double (both in 'control flow' and 'other' buckets)
+	  (thanks to Ahmed S. Al-Zawawi for bringing my attention to this issue)
+	* added NOP instructions category
+- adjusted README file to make meaning of different buckets in memreusedist more clear
+  (thanks to Kshitij Sudan for reporting this)
+
+May 20th 2008
+--------------
+
+MICA v0.21
+
+- removed -static from makefile, to avoid issues when linking MICA
+  (thanks to J. K. Rai and Ahmed S. Al-Zawawi for reporting this)
+
+Dec. 3rd 2007
+--------------
+
+MICA v0.2:
+
+- various bug fixes, including:
+ 	* reg: include non-full-width registers
+	* ilp: not all registers were included in analysis (stopped after first non-valid register)
+	* stride: fixed faulty use of readIndex/writeIndex in readMem/writeMem
+	* reset interval_ins_count for all characteristics
+- added features:
+	* taking size of memory read/write into account
+	* implementation of memreusedist characteristics, useful for characterizing cache behavior
+- adjusted:
+	* memory footprint measured for 64-byte blocks instead of 32-byte blocks (because most modern processors have 64-byte cache blocks)
+	* configuring MICA is done using a mica.conf configuration file instead of command line parameters
+- speed:
+	* used InsertIfCall/InsertThenCall to make more analysis routines inlineable
+	* buffering for ilp implementation, which yields roughly 10% speedup
+
+Sept. 29th 2007
+---------------
+
+Initial release: MICA v0.1

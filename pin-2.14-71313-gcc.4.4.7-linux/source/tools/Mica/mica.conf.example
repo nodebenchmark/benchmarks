@@ -1,0 +1,7 @@
+analysis_type: ilp_one
+interval_size: full
+ilp_size: 32
+page_size: 12
+block_size: 6
+itypes_spec_file: itypes_default.spec
+append_pid: yes
