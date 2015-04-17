@@ -18,6 +18,8 @@ parser.add_argument("-m", "--mode", dest="mode", help="mode to replay clients", 
 parser.add_argument("-c", "--clients", dest="clients", help="number of clients", default=1, type=int)
 parser.add_argument("-s", "--seed", dest ="seed", help="seed for client interleaving", default=7, type=int)
 parser.add_argument("-o", "--order", dest ="order", help="client ordering", default="shuffled")
+parser.add_argument("--client-only", dest ="client_only", help="only the client", action="store_true")
+parser.add_argument("--server-only", dest ="server_only", help="only the server", action="store_true")
 
 args = parser.parse_args()
 node_binary = args.node_binary
@@ -27,6 +29,8 @@ mode = args.mode
 clients = args.clients
 iseed = args.seed
 order = args.order
+client_only = args.client_only
+server_only = args.server_only
 
 benchmark_registry = {
     "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js"},
@@ -47,48 +51,54 @@ startup_script = benchmark_info["startup_script"]
 
 os.chdir(benchmark_dir)
 
-node_run_cmd = "%s %s %s" % (instrumentation, node_binary, startup_script)
-print node_run_cmd
+if not client_only:
 
-node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
-for line in iter(node.stdout.readline, ''):
-    print line.strip("\r\n")
-    if "BEGIN SENDING HTTP REQUESTS" in line:
-        time.sleep(30)
-	files = filter(lambda f: "_nodebench.py" in f, [d for d in os.listdir('.')])
-        execfile(files[0]) # TODO make work for multiple files
-        break
+    node_run_cmd = "%s %s %s" % (instrumentation, node_binary, startup_script)
+    print node_run_cmd
+    
+    
+    node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
+    for line in iter(node.stdout.readline, ''):
+        print line.strip("\r\n")
+        if "BEGIN SENDING HTTP REQUESTS" in line:
+            time.sleep(30)
+    	    break
 
-if mode == 'parallel':
-    pass
-    # p = Pool(num_threads)
-    # p.map(single_client_execute, range(num_client))
-else: # sequential by default
-    if order == 'requests':
-        queue = [ i for j in range(len(user_requests)) for i in range(clients) ]
-    elif order == 'users':
-        queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
-    elif order == 'shuffled':
-        queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
-        seed(iseed) # do no remove this!
-        shuffle(queue)
-    print queue
-    state = [ 0 for i in range(clients) ]
-    for ID in queue:
-        print ID
-        while True:
-            try:
-                user_requests[state[ID]](ID)
-                state[ID] += 1
-                break
-            except Exception, err:
-                print Exception, err
-                time.sleep(30)
-                continue
+if not server_only:
 
-assert all(s == len(user_requests) for s in state), "All requests did not execute"
-node.send_signal(signal.SIGINT)
-for line in iter(node.stdout.readline, ''):
-    print line.strip("\r\n")
+    files = filter(lambda f: "_nodebench.py" in f, [d for d in os.listdir('.')])
+    execfile(files[0]) # TODO make work for multiple files
+
+    if mode == 'parallel':
+        pass
+        # p = Pool(num_threads)
+        # p.map(single_client_execute, range(num_client))
+    else: # sequential by default
+        if order == 'requests':
+            queue = [ i for j in range(len(user_requests)) for i in range(clients) ]
+        elif order == 'users':
+            queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
+        elif order == 'shuffled':
+            queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
+            seed(iseed) # do no remove this!
+            shuffle(queue)
+        print queue
+        state = [ 0 for i in range(clients) ]
+        for ID in queue:
+            print ID
+            while True:
+                try:
+                    user_requests[state[ID]](ID)
+                    state[ID] += 1
+                    break
+                except Exception, err:
+                    print Exception, err
+                    time.sleep(30)
+                    continue
+    
+    assert all(s == len(user_requests) for s in state), "All requests did not execute"
+    node.send_signal(signal.SIGINT)
+    for line in iter(node.stdout.readline, ''):
+        print line.strip("\r\n")
 
 os.chdir(basedir)
