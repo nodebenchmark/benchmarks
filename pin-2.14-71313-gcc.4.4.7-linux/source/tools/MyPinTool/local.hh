@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "predictor.hh"
 #include "saturating_counter.hh"
 
@@ -106,6 +109,15 @@ class LocalPredictor: public Predictor
             delete state;
         }
 
+        void print(std::ostream *out)
+        {
+            double mispredict = 100.0l * (double)incorrect / ((double)correct + (double)incorrect);
+            *out << "***** Local Predictor *****" << std::endl;
+            *out << "Correctly predicted branches: " << correct << std::endl;
+            *out << "Incorrectly predicted branches: " << incorrect << std::endl;
+            *out << "Mispredict rate: " << mispredict << "%" << std::endl;
+        }
+
     private:
         int size;
 
@@ -126,7 +138,7 @@ class LocalPredictor: public Predictor
     private:
         Addr getIndex(Addr addr)
         {
-            return (addr >> 2) & historyIdxMask;
+            return addr & historyIdxMask;
         }
 
         uint64_t log2(uint64_t value)

@@ -32,6 +32,7 @@ std::ostream * out = &cerr;
 PIN_LOCK lock;
 
 bool enabled[128];
+bool alwaysOn;
 
 typedef uint64_t Time;
 
@@ -52,7 +53,7 @@ KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE,  "pintool",
     "o", "", "specify file name for MyPinTool output");
 
 KNOB<string>   KnobPredictorType(KNOB_MODE_WRITEONCE,  "pintool",
-    "type", "local", "specify type of branch predictor (local, global, tournament)");
+    "type", "tournament", "specify type of branch predictor (local, global, tournament)");
 
 KNOB<INT>   KnobGlobalPredictorSize(KNOB_MODE_WRITEONCE,  "pintool",
     "global-size", "4096", "specify number of global branch predictor counters");
@@ -62,11 +63,13 @@ KNOB<INT>   KnobTournamentPredictorSize(KNOB_MODE_WRITEONCE,  "pintool",
     "tournament-size", "4096", "specify number of tournament branch predictor counters");
 
 KNOB<INT>   KnobLocalPredictorHistories(KNOB_MODE_WRITEONCE,  "pintool",
-    "local-histories", "1024", "specify number of local branch predictor histories");
+    "local-histories", "256", "specify number of local branch predictor histories");
 
 KNOB<INT>   KnobUpdateDelay(KNOB_MODE_WRITEONCE,  "pintool",
     "update-delay", "12", "specify number of instructions to wait before updating branch prediction structures");
 
+KNOB<BOOL>   KnobAlwaysOn(KNOB_MODE_WRITEONCE, "pintool",
+    "always-on", "0", "monitor program regardless of pin_start and pin_end directives");
 
 /* ===================================================================== */
 // Utilities
@@ -91,7 +94,6 @@ VOID EnablePrediction(THREADID threadId)
 {
     assert(!enabled[threadId]);
     enabled[threadId] = true;
-	cout << "event start" << endl;
 }
 
 /* ===================================================================== */
@@ -100,7 +102,6 @@ VOID DisablePrediction(THREADID threadId)
 {
     assert(enabled[threadId]);
     enabled[threadId] = false;
-	cout << "event stop" << endl;
 }
 
 /* ===================================================================== */
@@ -168,16 +169,16 @@ VOID AdvanceTime(THREADID threadId)
 VOID Branch(INS ins, void *v)
 {
     // Check for pin_start() and pin_end()
-    if (INS_IsRet(ins)) {
-        RTN rtn = INS_Rtn(ins);
-        if (RTN_Valid(rtn)) {
-            string rtn_name = RTN_Name(rtn);
-            if (rtn_name == "pin_start") {
-				cout << "start found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnablePrediction, IARG_THREAD_ID, IARG_END);
-            } else if (rtn_name == "pin_end") {
-				cout << "stop found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisablePrediction, IARG_THREAD_ID, IARG_END);
+    if (!alwaysOn) {
+        if (INS_IsRet(ins)) {
+            RTN rtn = INS_Rtn(ins);
+            if (RTN_Valid(rtn)) {
+                string rtn_name = RTN_Name(rtn);
+                if (rtn_name == "pin_start") {
+                    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnablePrediction, IARG_THREAD_ID, IARG_END);
+                } else if (rtn_name == "pin_end") {
+                    INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisablePrediction, IARG_THREAD_ID, IARG_END);
+                }
             }
         }
     }
@@ -241,16 +242,21 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
 {
     PIN_GetLock(&lock, threadId+1);
 
-    uint64_t correct = predictors[threadId]->getCorrectPredictions();
-    uint64_t incorrect = predictors[threadId]->getIncorrectPredictions();
-    double mispredict = 100.0l * (double)incorrect / ((double)correct + (double)incorrect);
+    *out << "==========================================================" << endl;
+    *out << "                       Thread " << threadId << endl;
+    *out << "==========================================================" << endl;
+    predictors[threadId]->print(out);
 
-    *out <<  "===============================================" << endl;
-    *out <<  "Thread " << threadId << " BranchPredictor analysis results: " << endl;
-    *out <<  "Number of correctly predicted branches: " << correct  << endl;
-    *out <<  "Number of incorrectly predicted branches: " << incorrect  << endl;
-    *out <<  "Branch mispredition rate: " << mispredict << "%" << endl;
-    *out <<  "===============================================" << endl;
+    //uint64_t correct = predictors[threadId]->getCorrectPredictions();
+    //uint64_t incorrect = predictors[threadId]->getIncorrectPredictions();
+    //double mispredict = 100.0l * (double)incorrect / ((double)correct + (double)incorrect);
+
+    //*out <<  "===============================================" << endl;
+    //*out <<  "BranchPredictor analysis results: " << endl;
+    //*out <<  "Number of correctly predicted branches: " << correct  << endl;
+    //*out <<  "Number of incorrectly predicted branches: " << incorrect  << endl;
+    //*out <<  "Branch mispredition rate: " << mispredict << "%" << endl;
+    //*out <<  "===============================================" << endl;
 
     //if (predictor) {
     //    delete predictor;
@@ -276,11 +282,12 @@ int main(int argc, char *argv[])
         return Usage();
     }
 
+    alwaysOn = KnobAlwaysOn.Value();
     PIN_InitLock(&lock);
 
     for (int i = 0; i < 128; ++i) {
         curTime[i] = 0;
-        enabled[i] = false;
+        enabled[i] = alwaysOn;
     }
     updateDelay = KnobUpdateDelay.Value();
 

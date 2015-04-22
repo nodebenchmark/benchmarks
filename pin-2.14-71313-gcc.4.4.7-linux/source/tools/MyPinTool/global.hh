@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "predictor.hh"
 #include "saturating_counter.hh"
 
@@ -20,7 +23,7 @@ class GlobalPredictor: public Predictor
 
     public:
         GlobalPredictor(int size)
-            : Predictor(), size(size), historyMask(size - 1), idxMask(size - 1)
+            : Predictor(), size(size), history(0), historyMask(size - 1), idxMask(size - 1)
         {
             predictors = new SaturatingCounter[size];
         }
@@ -86,6 +89,15 @@ class GlobalPredictor: public Predictor
                 ++incorrect;
 
             delete state;
+        }
+
+        void print(std::ostream *out)
+        {
+            double mispredict = 100.0l * (double)incorrect / ((double)correct + (double)incorrect);
+            *out << "***** Global Predictor *****" << std::endl;
+            *out << "Correctly predicted branches: " << correct << std::endl;
+            *out << "Incorrectly predicted branches: " << incorrect << std::endl;
+            *out << "Mispredict rate: " << mispredict << "%" << std::endl;
         }
 
     private:

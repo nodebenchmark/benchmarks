@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "global.hh"
 #include "local.hh"
 #include "predictor.hh"
@@ -112,6 +115,23 @@ class TournamentPredictor : public Predictor
                 ++incorrect;
 
             delete state;
+        }
+
+        void print(std::ostream *out)
+        {
+            double mispredict = 100.0l * (double)incorrect / ((double)correct + (double)incorrect);
+            *out << "***** Tournament Predictor *****" << std::endl;
+            *out << "Correctly predicted branches: " << correct << std::endl;
+            *out << "Incorrectly predicted branches: " << incorrect << std::endl;
+            *out << "Mispredict rate: " << mispredict << "%" << std::endl;
+            *out << std::endl;
+
+            // Print global predictor stats.
+            globalPredictor.print(out);
+            *out << std::endl;
+
+            // Print local predictor stats.
+            localPredictor.print(out);
         }
 
     private:

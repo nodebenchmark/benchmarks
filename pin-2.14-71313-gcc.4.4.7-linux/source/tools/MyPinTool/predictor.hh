@@ -1,6 +1,9 @@
 #ifndef __PREDICTOR_HH__
 #define __PREDICTOR_HH__
 
+#include <fstream>
+#include <iostream>
+
 #include "EventQueue.hh"
 
 class Predictor
@@ -50,6 +53,8 @@ class Predictor
         virtual void updateHistory(bool result, void *void_state) {}
 
         virtual void update(bool result, void *void_state) {}
+
+        virtual void print(std::ostream *out) = 0;
 
         uint64_t getCorrectPredictions()
         {
