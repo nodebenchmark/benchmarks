@@ -246,6 +246,11 @@ class LRU
     }
     UINT32 GetAssociativity(UINT32 associativity) { return _tagsLastIndex + 1; }
 
+    VOID SetEpsilon(INT32 epsilon)
+    {
+		return;
+    }
+
     UINT32 FindWithoutUpdate(CACHE_TAG tag)
     {
         bool result = false;
@@ -324,7 +329,7 @@ class LRU
 /*!
  *  @brief Cache set with BIP (a.k.a, LIP (a.k.a. smarter MRU) with bimodal insertion) replacement
  */
-template <UINT32 MAX_ASSOCIATIVITY = 4, INT32 EPSILON = 64>
+template <UINT32 MAX_ASSOCIATIVITY = 4>
 class BIP
 {
   private:
@@ -335,8 +340,8 @@ class BIP
 	INT32 _epsilon;
 
   public:
-    BIP(UINT32 associativity = MAX_ASSOCIATIVITY, INT32 epsilon = EPSILON)
-      : _assoc(associativity), _epsilon(epsilon)
+    BIP(UINT32 associativity = MAX_ASSOCIATIVITY)
+      : _assoc(associativity)
     {
         ASSERTX(associativity <= MAX_ASSOCIATIVITY);
         num_acs = 0;
@@ -348,6 +353,11 @@ class BIP
         _assoc = associativity;
     }
     UINT32 GetAssociativity(UINT32 associativity) { return _assoc; }
+
+    VOID SetEpsilon(INT32 epsilon)
+    {
+        _epsilon = epsilon;
+    }
 
     UINT32 FindWithoutUpdate(CACHE_TAG tag)
     {
@@ -609,7 +619,7 @@ class CACHE : public CACHE_BASE
 
   public:
     // constructors/destructors
-    CACHE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT32 associativity, BOOL prefetch)
+    CACHE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT32 associativity, BOOL prefetch, INT32 epsilon)
       : CACHE_BASE(name, cacheSize, lineSize, associativity)
     {
         ASSERTX(NumSets() <= MAX_SETS);
@@ -617,6 +627,7 @@ class CACHE : public CACHE_BASE
         for (UINT32 i = 0; i < NumSets(); i++)
         {
             _sets[i].SetAssociativity(associativity);
+            _sets[i].SetEpsilon(epsilon);
         }
 
 		_prefetch_buf = 0;
@@ -763,6 +774,6 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::AccessSingleLine(ADDRINT addr, ACCESS
 #define CACHE_DIRECT_MAPPED(MAX_SETS, ALLOCATION) CACHE<CACHE_SET::DIRECT_MAPPED, MAX_SETS, ALLOCATION>
 #define CACHE_ROUND_ROBIN(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::ROUND_ROBIN<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
 #define CACHE_LRU(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::LRU<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
-#define CACHE_BIP(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION, EPSILON) CACHE<CACHE_SET::BIP<MAX_ASSOCIATIVITY, EPSILON>, MAX_SETS, ALLOCATION>
+#define CACHE_BIP(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::BIP<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
 
 #endif // PIN_CACHE_H

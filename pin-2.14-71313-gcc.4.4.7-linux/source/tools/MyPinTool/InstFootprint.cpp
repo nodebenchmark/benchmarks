@@ -234,59 +234,30 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
         return;
 
 	cout << "Start processing all events" << endl;
-	//std::set<ADDRINT>::iterator it;
-	//*out << "inst";
-	//for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
-	//{
-	//	*out << " " << *it;
-	//}
-	//*out << endl;
 
-	//UINT64 event_id = 0;
-	//while(!eventsInstMap.empty())
-	//{
-	//	*out << "event_" << event_id++;
-	//	std::map<ADDRINT, UINT64> cur_event_instMap = eventsInstMap.front();
-	//	eventsInstMap.pop_front();
-
-	//	std::set<ADDRINT>::iterator kt;
-	//	for(kt = global_staticInstsSet.begin();kt != global_staticInstsSet.end();kt++)
-	//	{
-	//		ADDRINT inst = *kt;
-	//		if(cur_event_instMap.find(inst) != cur_event_instMap.end())
-	//		{
-	//			*out << " " << cur_event_instMap[inst];
-	//		}
-	//		else
-	//		{
-	//			*out << " 0";
-	//		}
-	//	}
-	//	*out << endl;
-	//}
-
-
-
-
+	/* One event per row */
+	std::set<ADDRINT>::iterator it;
 	*out << "inst";
-	for(unsigned int i = 0;i < eventsInstMap.size();i++)
+	for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
 	{
-		*out << " event_" << i;
+		*out << " " << *it;
 	}
 	*out << endl;
 
-	std::set<ADDRINT>::iterator it;
-	for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
+	UINT64 event_id = 0;
+	while(!eventsInstMap.empty())
 	{
-		ADDRINT inst = *it;
-		*out << inst;
+		*out << "e_" << event_id++;
+		std::map<ADDRINT, UINT64> cur_event_instMap = eventsInstMap.front();
+		eventsInstMap.pop_front();
 
-		std::list< std::map<ADDRINT, UINT64> >::iterator kt;
-		for(kt = eventsInstMap.begin();kt != eventsInstMap.end();kt++)
+		std::set<ADDRINT>::iterator kt;
+		for(kt = global_staticInstsSet.begin();kt != global_staticInstsSet.end();kt++)
 		{
-			if(kt->find(inst) != kt->end())
+			ADDRINT inst = *kt;
+			if(cur_event_instMap.find(inst) != cur_event_instMap.end())
 			{
-				*out << " " << (*kt)[inst];
+				*out << " " << cur_event_instMap[inst];
 			}
 			else
 			{
@@ -295,6 +266,35 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
 		}
 		*out << endl;
 	}
+
+	/* One instruction per row */
+	//*out << "inst";
+	//for(unsigned int i = 0;i < eventsInstMap.size();i++)
+	//{
+	//	*out << " e_" << i;
+	//}
+	//*out << endl;
+
+	//std::set<ADDRINT>::iterator it;
+	//for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
+	//{
+	//	ADDRINT inst = *it;
+	//	*out << inst;
+
+	//	std::list< std::map<ADDRINT, UINT64> >::iterator kt;
+	//	for(kt = eventsInstMap.begin();kt != eventsInstMap.end();kt++)
+	//	{
+	//		if(kt->find(inst) != kt->end())
+	//		{
+	//			*out << " " << (*kt)[inst];
+	//		}
+	//		else
+	//		{
+	//			*out << " 0";
+	//		}
+	//	}
+	//	*out << endl;
+	//}
 
 	cout << "Finish processing all events" << endl;
 

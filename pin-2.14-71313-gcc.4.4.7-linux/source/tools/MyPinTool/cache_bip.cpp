@@ -46,7 +46,6 @@ END_LEGAL */
 
 #include "cache.H"
 #include "pin_profile.H"
-#include "cache_config.H"
 
 #include <stdlib.h>
 
@@ -88,6 +87,8 @@ KNOB<UINT32> KnobIL1Associativity(KNOB_MODE_WRITEONCE, "pintool",
     "il1assoc","8", "cache associativity (1 for direct mapped)");
 KNOB<UINT32> KnobIL1PREFETCH(KNOB_MODE_WRITEONCE, "pintool",
     "il1pf","1", "L1 instruction cache prefetching enabled");
+KNOB<INT32> KnobIL1BIPEPSILON(KNOB_MODE_WRITEONCE, "pintool",
+    "il1epsilon","-1", "L1 instruction cache BIP EPSILON");
 
 KNOB<UINT32> KnobL2CacheSize(KNOB_MODE_WRITEONCE, "pintool",
     "l2size","256", "cache size in kilobytes");
@@ -134,9 +135,8 @@ namespace IL1
     const UINT32 max_sets = 16 * KILO; // cacheSize / (lineSize * associativity);
     const UINT32 max_associativity = 16; // associativity;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
-	const INT32 epsilon = EPSILON;
 
-   	typedef CACHE_BIP(max_sets, max_associativity, allocation, epsilon) CACHE;
+   	typedef CACHE_BIP(max_sets, max_associativity, allocation) CACHE;
 }
 
 namespace L2
@@ -547,13 +547,15 @@ VOID StartThread(THREADID threadId, CONTEXT *ctxt, INT32 flags, VOID *v)
                          KnobDL1CacheSize.Value() * KILO,
                          KnobDL1LineSize.Value(),
                          KnobDL1Associativity.Value(),
-                         0);
+                         0,
+                         -1);
 
     il1[threadId] = new IL1::CACHE("L1 Instruction Cache",
                          KnobIL1CacheSize.Value() * KILO,
                          KnobIL1LineSize.Value(),
                          KnobIL1Associativity.Value(),
-                         KnobIL1PREFETCH.Value());
+                         KnobIL1PREFETCH.Value(),
+                         KnobIL1BIPEPSILON.Value());
     PIN_ReleaseLock(&lock);
 }
 

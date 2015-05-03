@@ -46,7 +46,6 @@ END_LEGAL */
 
 #include "cache.H"
 #include "pin_profile.H"
-#include "cache_config.H"
 
 #include <stdlib.h>
 
@@ -134,7 +133,6 @@ namespace IL1
     const UINT32 max_sets = 16 * KILO; // cacheSize / (lineSize * associativity);
     const UINT32 max_associativity = 16; // associativity;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
-	const INT32 epsilon = EPSILON;
 
    	typedef CACHE_LRU(max_sets, max_associativity, allocation) CACHE;
 }
