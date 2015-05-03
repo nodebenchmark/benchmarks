@@ -28,58 +28,60 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
+
 #include <iostream>
 #include <fstream>
+#include <cassert>
 #include "pin.H"
-#include <vector>
-#include <assert.h>
-
-using namespace std;
 
 ofstream OutFile;
+bool enabled[128];
 
 // The running count of instructions is kept here
 // make it static to help the compiler optimize docount
-static UINT64 icount = 0;
+ADDRINT last_end_addr = 0;
 
-static bool enabled = false;
-vector<unsigned int> per_event_inscount;
-vector<unsigned int> misc_inscount;
+// This function is called before every block
+VOID docount(THREADID threadId, ADDRINT start_addr, UINT32 size)
+{
+    if (!enabled[threadId])
+        return;
 
-// This function is called before every instruction is executed
-//VOID docount() { if(enabled) icount++; }
-VOID docount(THREADID threadId) { if(threadId == 0) icount++; }
+	if(start_addr != last_end_addr + 1)
+	{
+		if(last_end_addr == 0) OutFile << start_addr << ":";
+		else OutFile << last_end_addr << endl << start_addr << ":";
+	}
+	last_end_addr = start_addr + size - 1;
+}
     
-/* ===================================================================== */
+// Pin calls this function every time a new basic block is encountered
+// It inserts a call to docount
+VOID Trace(TRACE trace, VOID *v)
+{
+    // Visit every basic block  in the trace
+    for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl))
+    {
+        // Insert a call to docount before every bbl, passing the number of instructions
+        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)docount, IARG_THREAD_ID, IARG_ADDRINT, BBL_Address(bbl), IARG_UINT32, BBL_Size(bbl), IARG_END);
+    }
+}
 
 VOID EnableCache(THREADID threadId)
 {
-	if(threadId == 0)
-	{
-    	assert(!enabled);
-    	enabled = true;
-		cout << "event start" << endl;
-		misc_inscount.push_back(icount);
-		icount = 0;
-	}
+    assert(!enabled[threadId]);
+    enabled[threadId] = true;
+	cout << "event start" << endl;
 }
-
-/* ===================================================================== */
 
 VOID DisableCache(THREADID threadId)
 {
-	if(threadId == 0)
-	{
-    	assert(enabled);
-    	enabled = false;
-		cout << "event stop" << endl;
-		per_event_inscount.push_back(icount);
-		icount = 0;
-	}
+    assert(enabled[threadId]);
+    enabled[threadId] = false;
+	cout << "event stop" << endl;
 }
 
-// Pin calls this function every time a new instruction is encountered
-VOID Instruction(INS ins, VOID *v)
+VOID Instruction(INS ins, void * v)
 {
     // Check for pin_start() and pin_end()
     if (INS_IsRet(ins)) {
@@ -95,24 +97,16 @@ VOID Instruction(INS ins, VOID *v)
             }
         }
     }
-
-    // Insert a call to docount before every instruction, no arguments are passed
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_THREAD_ID, IARG_END);
 }
 
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool",
-    "o", "inscount.out", "specify output file name");
+    "o", "bblacs.out", "specify output file name");
 
 // This function is called when the application exits
 VOID Fini(INT32 code, VOID *v)
 {
     // Write to a file since cout and cerr maybe closed by the application
     OutFile.setf(ios::showbase);
-	for(unsigned int i = 0;i < per_event_inscount.size();i++)
-	{
-    	OutFile << per_event_inscount[i] << endl;
-    	OutFile << misc_inscount[i + 1] << endl;
-	}
     OutFile.close();
 }
 
@@ -130,8 +124,6 @@ INT32 Usage()
 /* ===================================================================== */
 /* Main                                                                  */
 /* ===================================================================== */
-/*   argc, argv are the entire command line: pin -t <toolname> -- ...    */
-/* ===================================================================== */
 
 int main(int argc, char * argv[])
 {
@@ -140,10 +132,14 @@ int main(int argc, char * argv[])
     // Initialize pin
     if (PIN_Init(argc, argv)) return Usage();
 
+    for (int i = 0; i < 128; ++i) {
+        enabled[i] = false;
+    }
+
     OutFile.open(KnobOutputFile.Value().c_str());
 
-    // Register Instruction to be called to instrument instructions
     INS_AddInstrumentFunction(Instruction, 0);
+    TRACE_AddInstrumentFunction(Trace, 0);
 
     // Register Fini to be called when the application exits
     PIN_AddFiniFunction(Fini, 0);

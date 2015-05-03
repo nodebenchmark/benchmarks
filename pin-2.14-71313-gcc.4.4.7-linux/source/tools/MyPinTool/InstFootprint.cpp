@@ -6,10 +6,12 @@
 
 #include <assert.h>
 
+#include <iterator>
 #include <iostream>
 #include <fstream>
 #include <map>
 #include <set>
+#include <list>
 
 #include "pin.H"
 
@@ -66,7 +68,11 @@ struct ShoeSize {
     UINT64 staticInsts;
     UINT64 dynamicBytes;
     UINT64 dynamicInsts;
+	//UINT64 reusedBins[17];
+	std::map<ADDRINT, UINT64> instMap;
 };
+std::list< std::map<ADDRINT, UINT64> > eventsInstMap;
+std::set<ADDRINT> global_staticInstsSet;
 ShoeSize MeasureFootprint(std::map<bblFootprint*,UINT32> *prints);
 
 /* ===================================================================== */
@@ -122,24 +128,41 @@ VOID DisableCounting(THREADID threadId)
     enabled[threadId] = false;
 
     ShoeSize shoe = MeasureFootprint(footprints);
-    *out << shoe.staticBytes << "," << shoe.dynamicBytes << "," <<
-        shoe.staticInsts << "," << shoe.dynamicInsts << ",";
 
-    for (std::map<bblFootprint*,UINT32>::iterator i = footprints->begin(),
-            ie = footprints->end(); i != ie; ++i) {
-        prevEvent->erase(i->first);
-    }
-    ShoeSize shoe_overlap = MeasureFootprint(prevEvent);
-    *out << (prevBytes - shoe_overlap.staticBytes) << "," <<
-        (prevInsts - shoe_overlap.staticInsts) << endl;
+    /* for dumping static-reuse stats */
+    //for (std::map<ADDRINT, UINT64>::iterator i = shoe.instMap.begin(),
+    //    ie = shoe.instMap.end(); i != ie; ++i) {
+	//	*out << i->first << " " << i->second << endl;
+	//}
+	eventsInstMap.push_back(shoe.instMap);
+    footprints->clear();
 
-    prevEvent->clear();
-    std::map<bblFootprint*,UINT32> *temp = prevEvent;
-    prevEvent = footprints;
-    footprints = temp;
+	/* for dumping reuse bin stats */
+	//UINT64 total = 0;
+	//for(int i = 0;i <= 16;i++)
+	//{
+	//	*out << shoe.reusedBins[i] << ",";
+	//	total += shoe.reusedBins[i];
+	//}
+	//*out << total << "," << shoe.dynamicInsts << "," << shoe.staticBytes << endl;
+    //footprints->clear();
 
-    prevBytes = shoe.staticBytes;
-    prevInsts = shoe.staticInsts;
+	/* for dumping static/dynamic/sharing stats */
+    //*out << shoe.staticBytes << "," << shoe.dynamicBytes << "," <<
+    //    shoe.staticInsts << "," << shoe.dynamicInsts << ",";
+    //for (std::map<bblFootprint*,UINT32>::iterator i = footprints->begin(),
+    //        ie = footprints->end(); i != ie; ++i) {
+    //    prevEvent->erase(i->first);
+    //}
+    //ShoeSize shoe_overlap = MeasureFootprint(prevEvent);
+    //*out << (prevBytes - shoe_overlap.staticBytes) << "," <<
+    //    (prevInsts - shoe_overlap.staticInsts) << endl;
+    //prevEvent->clear();
+    //std::map<bblFootprint*,UINT32> *temp = prevEvent;
+    //prevEvent = footprints;
+    //footprints = temp;
+    //prevBytes = shoe.staticBytes;
+    //prevInsts = shoe.staticInsts;
 }
 
 VOID CheckDirectives(INS ins, VOID *v)
@@ -210,15 +233,101 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
     if (threadId)
         return;
 
-    ShoeSize shoe = MeasureFootprint(bigfoot);
-    *out << endl;
-    *out << shoe.staticBytes << "," << shoe.dynamicBytes << "," <<
-        shoe.staticInsts << "," << shoe.dynamicInsts << endl;
+	cout << "Start processing all events" << endl;
+	//std::set<ADDRINT>::iterator it;
+	//*out << "inst";
+	//for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
+	//{
+	//	*out << " " << *it;
+	//}
+	//*out << endl;
+
+	//UINT64 event_id = 0;
+	//while(!eventsInstMap.empty())
+	//{
+	//	*out << "event_" << event_id++;
+	//	std::map<ADDRINT, UINT64> cur_event_instMap = eventsInstMap.front();
+	//	eventsInstMap.pop_front();
+
+	//	std::set<ADDRINT>::iterator kt;
+	//	for(kt = global_staticInstsSet.begin();kt != global_staticInstsSet.end();kt++)
+	//	{
+	//		ADDRINT inst = *kt;
+	//		if(cur_event_instMap.find(inst) != cur_event_instMap.end())
+	//		{
+	//			*out << " " << cur_event_instMap[inst];
+	//		}
+	//		else
+	//		{
+	//			*out << " 0";
+	//		}
+	//	}
+	//	*out << endl;
+	//}
+
+
+
+
+	*out << "inst";
+	for(unsigned int i = 0;i < eventsInstMap.size();i++)
+	{
+		*out << " event_" << i;
+	}
+	*out << endl;
+
+	std::set<ADDRINT>::iterator it;
+	for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
+	{
+		ADDRINT inst = *it;
+		*out << inst;
+
+		std::list< std::map<ADDRINT, UINT64> >::iterator kt;
+		for(kt = eventsInstMap.begin();kt != eventsInstMap.end();kt++)
+		{
+			if(kt->find(inst) != kt->end())
+			{
+				*out << " " << (*kt)[inst];
+			}
+			else
+			{
+				*out << " 0";
+			}
+		}
+		*out << endl;
+	}
+
+	cout << "Finish processing all events" << endl;
+
+    //ShoeSize shoe = MeasureFootprint(bigfoot);
+
+    /* for dumping static inst-reuse stats */
+    //for (std::map<ADDRINT, UINT64>::iterator i = shoe.instMap.begin(),
+    //    ie = shoe.instMap.end(); i != ie; ++i) {
+	//	*out << i->first << " " << i->second << endl;
+	//}
+
+	/* for dumping reuse bin stats */
+	//UINT64 total = 0;
+	//for(int i = 0;i <= 16;i++)
+	//{
+	//	*out << shoe.reusedBins[i] << ",";
+	//	total += shoe.reusedBins[i];
+	//}
+	//*out << total << "," << shoe.dynamicInsts << "," << shoe.staticBytes << endl;
+
+	/* for dumping static/dynamic/sharing stats */
+    //*out << endl;
+    //*out << shoe.staticBytes << "," << shoe.dynamicBytes << "," <<
+    //    shoe.staticInsts << "," << shoe.dynamicInsts << endl;
 }
 
 ShoeSize MeasureFootprint(std::map<bblFootprint*,UINT32> *prints)
 {
     UINT64 inst_count = 0;
+    ShoeSize shoe;
+	std::map<ADDRINT, UINT64> inst_Map; // mapping from the instruction addr to the number of times it's referenced
+
+	//for(int i = 0;i <= 16;i++) shoe.reusedBins[i] = 0;
 
     std::set<ADDRINT> static_footprint;
     std::set<ADDRINT> static_insts;
@@ -236,12 +345,18 @@ ShoeSize MeasureFootprint(std::map<bblFootprint*,UINT32> *prints)
                 je = i->first->end(); j != je; ++j) {
             // Insert each instruction
             static_insts.insert(j->first);
+			global_staticInstsSet.insert(j->first);
 
             // Insert each byte
             for (UINT32 k = 0; k < j->second; ++k) {
                 static_footprint.insert(j->first + k);
             }
             dynamic_temp += j->second;
+
+			UINT64 start_addr = j->first;
+			if(inst_Map.find(start_addr) == inst_Map.end())
+				inst_Map[start_addr] = 0;
+			inst_Map[start_addr] += i->second;
         }
 
         dynamic_footprint += i->second * dynamic_temp;
@@ -250,11 +365,21 @@ ShoeSize MeasureFootprint(std::map<bblFootprint*,UINT32> *prints)
         inst_count += i->first->size() * i->second;
     }
 
-    ShoeSize shoe;
+    //for (std::map<ADDRINT,UINT64>::iterator i = instMap.begin(),
+    //        ie = instMap.end(); i != ie; ++i)
+	//{
+	//	int bin_id;
+	//	if((i->second - 1) / 16 > 16) bin_id = 16;
+	//	else bin_id = (i->second - 1) / 16;
+	//	shoe.reusedBins[bin_id] += i->second - 1;
+	//	//shoe.reusedBins[bin_id]++;
+	//}
+
     shoe.staticBytes = static_footprint.size();
     shoe.staticInsts = static_insts.size();
     shoe.dynamicBytes = dynamic_footprint;
     shoe.dynamicInsts = dynamic_insts;
+    shoe.instMap = inst_Map;
 
     return shoe;
 }
@@ -288,7 +413,11 @@ int main(int argc, char *argv[])
     string fileName = KnobOutputFile.Value();
 
     if (!fileName.empty()) { out = new std::ofstream(fileName.c_str());}
-    *out << "Static Bytes,Dynamic Bytes,Static Insts,Dynamic Insts,Bytes Shared,Insts Shared" << endl;
+    //for (int i = 0; i <= 16; ++i) {
+    //    *out << i << " Reuses,";
+    //}
+    //*out << "Static Insts,Dynamic Insts,Static Bytes" << endl;
+    //*out << "Static Bytes,Dynamic Bytes,Static Insts,Dynamic Insts,Bytes Shared,Insts Shared" << endl;
 
     // Register function to be called to instrument traces
     TRACE_AddInstrumentFunction(Trace, 0);

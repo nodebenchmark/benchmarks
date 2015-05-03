@@ -39,18 +39,18 @@ END_LEGAL */
 #ifndef PIN_CACHE_H
 #define PIN_CACHE_H
 
+
 #define KILO 1024
 #define MEGA (KILO*KILO)
 #define GIGA (KILO*MEGA)
 
 typedef UINT64 CACHE_STATS; // type of cache hit/miss counters
 
-#include <deque>
-#include <map>
-#include <set>
-#include <list>
 #include <sstream>
-
+#include <map>
+#include <queue>
+#include <set>
+#include <climits>
 using namespace std;
 
 /*! RMR (rodric@gmail.com) 
@@ -204,7 +204,7 @@ class ROUND_ROBIN
 };
 
 /*!
- *  @brief Cache set with LRU replacement
+ *  @brief Cache set with round robin replacement
  */
 template <UINT32 MAX_ASSOCIATIVITY = 4>
 class LRU
@@ -246,23 +246,6 @@ class LRU
     }
     UINT32 GetAssociativity(UINT32 associativity) { return _tagsLastIndex + 1; }
 
-    UINT32 FindWithoutUpdate(CACHE_TAG tag)
-    {
-        bool result = false;
-
-        UINT32 index;
-        for (index = 0; index <= _tagsLastIndex; index++)
-        {
-            if (_valid[index] && _tags[index] == tag)
-            {
-                result = true;
-                break;
-            }
-        }
-
-        return result;
-    }
-
     UINT32 Find(CACHE_TAG tag)
     {
         bool result = false;
@@ -295,8 +278,11 @@ class LRU
         return result;
     }
 
-    VOID Replace(CACHE_TAG tag)
+    VOID Replace(CACHE_TAG tag, map< ADDRINT, queue<CACHE_STATS> > &tags_map)
     {
+        // g++ -O3 too dumb to do CSE on following lines?!
+        //const UINT32 index = _nextReplaceIndex;
+
         UINT32 index;
         for (index = 0; index < _tagsLastIndex; ++index) {
             if (!_valid[index] || _age[index] == _tagsLastIndex) {
@@ -318,28 +304,28 @@ class LRU
             }
         }
         _age[index] = 0;
+
+        // condition typically faster than modulo
+        //_nextReplaceIndex = (index == 0 ? _tagsLastIndex : index - 1);
     }
 };
 
 /*!
- *  @brief Cache set with BIP (a.k.a, LIP (a.k.a. smarter MRU) with bimodal insertion) replacement
+ *  @brief Cache set with OPT replacement
  */
-template <UINT32 MAX_ASSOCIATIVITY = 4, INT32 EPSILON = 64>
-class BIP
+template <UINT32 MAX_ASSOCIATIVITY = 4>
+class OPT
 {
   private:
-    list<ADDRINT> ways; // front is MRU, back is LRU
-    map<ADDRINT,list<ADDRINT>::iterator> tagMap;
-    UINT32 _assoc;
-	UINT64 num_acs;
-	INT32 _epsilon;
+    set<ADDRINT> _tags;
+    UINT32 _tagsLastIndex;
+	UINT32 _assoc;
 
   public:
-    BIP(UINT32 associativity = MAX_ASSOCIATIVITY, INT32 epsilon = EPSILON)
-      : _assoc(associativity), _epsilon(epsilon)
+    OPT(UINT32 associativity = MAX_ASSOCIATIVITY)
+      : _assoc(associativity)
     {
         ASSERTX(associativity <= MAX_ASSOCIATIVITY);
-        num_acs = 0;
     }
 
     VOID SetAssociativity(UINT32 associativity)
@@ -349,73 +335,48 @@ class BIP
     }
     UINT32 GetAssociativity(UINT32 associativity) { return _assoc; }
 
-    UINT32 FindWithoutUpdate(CACHE_TAG tag)
-    {
-        bool hit = false;
-        ADDRINT tag_value = tag.value();
-
-        map<ADDRINT,list<ADDRINT>::iterator>::iterator map_iter = tagMap.find(tag_value);
-        if (map_iter != tagMap.end()) {
-            hit = true;
-        }
-
-        return hit;
-    }
-
     UINT32 Find(CACHE_TAG tag)
     {
         bool hit = false;
-        ++num_acs;
-        ADDRINT tag_value = tag.value();
+        ASSERTX(_tags.size() <= _assoc);
+		ADDRINT tag_value = tag.value();
 
-		ASSERTX(tagMap.size() <= _assoc);
-		ASSERTX(ways.size() <= _assoc);
-        map<ADDRINT,list<ADDRINT>::iterator>::iterator map_iter = tagMap.find(tag_value);
-        if (map_iter != tagMap.end()) {
-            hit = true;
-
-           	// Update ordering
-           	ways.erase(map_iter->second);
-           	ways.push_front(tag_value);
-           	map_iter->second = ways.begin();
-        }
-        ASSERTX(ways.size() == tagMap.size());
+		if(_tags.find(tag_value) != _tags.end()) hit = true;
 
         return hit;
     }
 
-    VOID Replace(CACHE_TAG tag)
+    VOID Replace(CACHE_TAG tag, map< ADDRINT, queue<CACHE_STATS> > &tags_map)
     {
-        // At this point we know the cache had a miss
-        ADDRINT tag_value = tag.value();
-        if (ways.size() < _assoc) {
-            ways.push_back(tag_value);
-            list<ADDRINT>::iterator iter = ways.end();
-			--iter;
-            ASSERTX(*iter == tag_value);
-            tagMap.insert(std::pair<ADDRINT,list<ADDRINT>::iterator>(tag_value, iter));
-        } else {
-            if ((_epsilon == -1) || (num_acs % _epsilon != 0)) { // Normal insertion to the LRU line
-                ADDRINT victim = ways.back();
-                tagMap.erase(victim);
-                ways.pop_back();
-                ways.push_back(tag_value);
-                list<ADDRINT>::iterator iter = ways.end();
-				--iter;
-                ASSERTX(*iter == tag_value);
-                tagMap.insert(std::pair<ADDRINT,list<ADDRINT>::iterator>(tag_value, iter));
-            } else { // Insertion to the MRU line
-                ADDRINT victim = ways.front();
-                tagMap.erase(victim);
-                ways.pop_front();
-                ways.push_front(tag_value);
-                list<ADDRINT>::iterator iter = ways.begin();
-                ASSERTX(*iter == tag_value);
-                tagMap.insert(std::pair<ADDRINT,list<ADDRINT>::iterator>(tag_value, iter));
-            }
-        }
+		set<ADDRINT>::iterator it;
+		ADDRINT tag_value = tag.value();
 
-        ASSERTX(ways.size() == tagMap.size());
+		if(_tags.size() < _assoc)
+		{
+			_tags.insert(tag_value);
+		}
+		else
+		{
+			CACHE_STATS max_gap = 0;
+			ADDRINT victim_tag_value = 0;
+			for(it = _tags.begin();it != _tags.end();it++)
+			{
+				ADDRINT cur_tag_value = *it;
+				if(tags_map[cur_tag_value].empty())
+				{
+					victim_tag_value = cur_tag_value;
+					break;
+				}
+				if(tags_map[cur_tag_value].front() > max_gap)
+				{
+					max_gap = tags_map[cur_tag_value].front();
+					victim_tag_value = cur_tag_value;
+				}
+			}
+        	ASSERTX(_tags.find(victim_tag_value) != _tags.end());
+			_tags.erase(victim_tag_value);
+			_tags.insert(tag_value);
+		}
     }
 };
 
@@ -454,6 +415,7 @@ class CACHE_BASE
   protected:
     static const UINT32 HIT_MISS_NUM = 2;
     CACHE_STATS _access[ACCESS_TYPE_NUM][HIT_MISS_NUM];
+	CACHE_STATS num_acs;
 
   private:    // input params
     const std::string _name;
@@ -490,13 +452,14 @@ class CACHE_BASE
     UINT32 CacheSize() const { return _cacheSize; }
     UINT32 LineSize() const { return _lineSize; }
     UINT32 Associativity() const { return _associativity; }
- 
+    //
     CACHE_STATS Hits(ACCESS_TYPE accessType) const { return _access[accessType][true];}
     CACHE_STATS Misses(ACCESS_TYPE accessType) const { return _access[accessType][false];}
     CACHE_STATS Accesses(ACCESS_TYPE accessType) const { return Hits(accessType) + Misses(accessType);}
     CACHE_STATS Hits() const { return SumAccess(true);}
     CACHE_STATS Misses() const { return SumAccess(false);}
     CACHE_STATS Accesses() const { return Hits() + Misses();}
+    CACHE_STATS real_access() const { return num_acs;}
 
     VOID SplitAddress(const ADDRINT addr, CACHE_TAG & tag, UINT32 & setIndex) const
     {
@@ -534,6 +497,8 @@ CACHE_BASE::CACHE_BASE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT
         _access[accessType][false] = 0;
         _access[accessType][true] = 0;
     }
+
+	num_acs = 0;
 }
 
 /*!
@@ -592,6 +557,13 @@ string CACHE_BASE::StatsLong(string prefix, CACHE_TYPE cache_type) const
     return out;
 }
 
+struct ACS_PKG {
+	ADDRINT _addr;
+	UINT32 _size; // 0 indicates it's a single cacheline access, i.e., doesn't cross the cacheline boundary
+	CACHE_BASE::ACCESS_TYPE _accessType;
+	CACHE_STATS _num_acs;
+	ACS_PKG(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, CACHE_STATS num_acs): _addr(addr), _size(size), _accessType(accessType), _num_acs(num_acs) {}
+};
 
 /*!
  *  @brief Templated cache class with specific cache set allocation policies
@@ -604,12 +576,12 @@ class CACHE : public CACHE_BASE
 {
   private:
     SET _sets[MAX_SETS];
-	ADDRINT _prefetch_buf;
-	BOOL _prefetch;
+	queue<ACS_PKG> _inst_stream;
+	map< ADDRINT, queue<CACHE_STATS> > _tags_maps[MAX_SETS];
 
   public:
     // constructors/destructors
-    CACHE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT32 associativity, BOOL prefetch)
+    CACHE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT32 associativity)
       : CACHE_BASE(name, cacheSize, lineSize, associativity)
     {
         ASSERTX(NumSets() <= MAX_SETS);
@@ -618,9 +590,6 @@ class CACHE : public CACHE_BASE
         {
             _sets[i].SetAssociativity(associativity);
         }
-
-		_prefetch_buf = 0;
-		_prefetch = prefetch;
     }
 
     // modifiers
@@ -628,6 +597,79 @@ class CACHE : public CACHE_BASE
     bool Access(ADDRINT addr, UINT32 size, ACCESS_TYPE accessType);
     /// Cache access at addr that does not span cache lines
     bool AccessSingleLine(ADDRINT addr, ACCESS_TYPE accessType);
+	UINT64 remaining_inst() { return _inst_stream.size(); }
+
+	VOID epilogue()
+	{
+		while(!_inst_stream.empty())
+		{
+			ACS_PKG _t_acs_pkg = _inst_stream.front();
+			_inst_stream.pop();
+			opt_cache_acs(_t_acs_pkg);
+		}
+	}
+
+	VOID opt_cache_acs(ACS_PKG &_t_acs_pkg)
+	{
+		ADDRINT inst_addr = _t_acs_pkg._addr;
+
+		if(_t_acs_pkg._size != 0)
+		{
+    		const ADDRINT lineSize = LineSize();
+    		const ADDRINT notLineMask = ~(lineSize - 1);
+    		const ADDRINT highAddr = inst_addr + _t_acs_pkg._size;
+    		bool allHit = true;
+
+    		do
+    		{
+        		CACHE_TAG tag;
+        		UINT32 setIndex;
+
+        		SplitAddress(inst_addr, tag, setIndex);
+
+        		SET & set = _sets[setIndex];
+
+        		ASSERTX(_tags_maps[setIndex].find(tag.value()) != _tags_maps[setIndex].end());
+        		ASSERTX((_tags_maps[setIndex][tag.value()].front() - _t_acs_pkg._num_acs) <= 1);
+    			bool localHit = set.Find(tag);
+    			allHit &= localHit;
+
+    			// on miss, loads always allocate, stores optionally
+    			if ( (! localHit) && (_t_acs_pkg._accessType == ACCESS_TYPE_LOAD || STORE_ALLOCATION == CACHE_ALLOC::STORE_ALLOCATE))
+    			{
+    			    set.Replace(tag, _tags_maps[setIndex]);
+    			}
+				_tags_maps[setIndex][tag.value()].pop(); // pop out the tag that is being inserted into _tags from tags_map
+
+        		inst_addr = (inst_addr & notLineMask) + lineSize; // start of next cache line
+    		} while (inst_addr < highAddr);
+    		_access[_t_acs_pkg._accessType][allHit]++;
+		}
+		else
+		{
+        	CACHE_TAG tag;
+        	UINT32 setIndex;
+    		bool hit = true;
+
+        	SplitAddress(inst_addr, tag, setIndex);
+
+        	SET & set = _sets[setIndex];
+
+        	ASSERTX(_tags_maps[setIndex].find(tag.value()) != _tags_maps[setIndex].end());
+        	ASSERTX(_t_acs_pkg._num_acs == _tags_maps[setIndex][tag.value()].front());
+
+    		hit = set.Find(tag);
+
+    		// on miss, loads always allocate, stores optionally
+    		if ( (! hit) && (_t_acs_pkg._accessType == ACCESS_TYPE_LOAD || STORE_ALLOCATION == CACHE_ALLOC::STORE_ALLOCATE))
+    		{
+    		    set.Replace(tag, _tags_maps[setIndex]);
+    		}
+			_tags_maps[setIndex][tag.value()].pop(); // pop out the tag that is being inserted into _tags from tags_map
+
+    		_access[_t_acs_pkg._accessType][hit]++;
+		}
+	}
 };
 
 /*!
@@ -637,65 +679,34 @@ class CACHE : public CACHE_BASE
 template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
 bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACCESS_TYPE accessType)
 {
-    const ADDRINT highAddr = addr + size;
-    bool allHit = true;
-
     const ADDRINT lineSize = LineSize();
     const ADDRINT notLineMask = ~(lineSize - 1);
+    const ADDRINT highAddr = addr + size;
 
+	_inst_stream.push(ACS_PKG(addr, size, accessType, num_acs + 1)); // only insert one inst into _inst_stream
     do
     {
         CACHE_TAG tag;
         UINT32 setIndex;
 
         SplitAddress(addr, tag, setIndex);
-        SET & set = _sets[setIndex];
-        bool localHit = set.Find(tag);
 
-		if(_prefetch)
-		{
-            CACHE_TAG nextline_tag, prefetch_buf_tag;
-            UINT32 nextline_setIndex, prefetch_buf_setIndex;
-
-        	ADDRINT nextline_addr = (addr & notLineMask) + lineSize; // start of next cache line
-        	SplitAddress(nextline_addr, nextline_tag, nextline_setIndex);
-	    	bool nextline_hit = _sets[nextline_setIndex].FindWithoutUpdate(nextline_tag);
-
-        	SplitAddress(_prefetch_buf, prefetch_buf_tag, prefetch_buf_setIndex);
-	    	bool prefetch_buf_currentline_hit = (tag == prefetch_buf_tag) && (setIndex == prefetch_buf_setIndex);
-	    	//bool prefetch_buf_nextline_hit = (nextline_tag == prefetch_buf_tag) && (nextline_setIndex == prefetch_buf_setIndex);
-
-	    	if(!nextline_hit)
-	    	{
-    			const ADDRINT LineMask = lineSize - 1;
-    			ADDRINT offset = addr & LineMask;
-
-				if(offset <= LineSize() - 10 * 4)
-	    		{
-	    	    	_prefetch_buf = nextline_addr;
-				}
-	    	}
-
-        	allHit &= (localHit || prefetch_buf_currentline_hit);
-		}
-		else 
-		{
-        	allHit &= localHit;
-		}
-
-        // on miss, loads always allocate, stores optionally
-        if ( (! localHit) && (accessType == ACCESS_TYPE_LOAD || STORE_ALLOCATION == CACHE_ALLOC::STORE_ALLOCATE))
-        {
-            set.Replace(tag);
-        }
+		num_acs++;
+		_tags_maps[setIndex][tag.value()].push(num_acs);
 
         addr = (addr & notLineMask) + lineSize; // start of next cache line
     }
     while (addr < highAddr);
 
-    _access[accessType][allHit]++;
+	if(_inst_stream.size() > 1000000)
+	{
+		ACS_PKG _t_acs_pkg = _inst_stream.front();
+		_inst_stream.pop();
+		opt_cache_acs(_t_acs_pkg);
+		ASSERTX(_inst_stream.size() == 1000000);
+	}
 
-    return allHit;
+    return true; // doesn't matter for icache
 }
 
 /*!
@@ -708,61 +719,26 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::AccessSingleLine(ADDRINT addr, ACCESS
     UINT32 setIndex;
 
     SplitAddress(addr, tag, setIndex);
-    SET & set = _sets[setIndex];
-    bool hit = set.Find(tag);
-	bool final_hit = hit;
 
-	if(_prefetch)
+	num_acs++;
+	_inst_stream.push(ACS_PKG(addr, 0, accessType, num_acs));
+	_tags_maps[setIndex][tag.value()].push(num_acs);
+
+	if(_inst_stream.size() > 1000000)
 	{
-        const ADDRINT lineSize = LineSize();
-        const ADDRINT notLineMask = ~(lineSize - 1);
-
-        CACHE_TAG nextline_tag, prefetch_buf_tag;
-        UINT32 nextline_setIndex, prefetch_buf_setIndex;
-
-    	ADDRINT nextline_addr = (addr & notLineMask) + lineSize; // start of next cache line
-    	SplitAddress(nextline_addr, nextline_tag, nextline_setIndex);
-		bool nextline_hit = _sets[nextline_setIndex].FindWithoutUpdate(nextline_tag);
-
-    	SplitAddress(_prefetch_buf, prefetch_buf_tag, prefetch_buf_setIndex);
-		bool prefetch_buf_currentline_hit = (tag == prefetch_buf_tag) && (setIndex == prefetch_buf_setIndex);
-		//bool prefetch_buf_nextline_hit = (nextline_tag == prefetch_buf_tag) && (nextline_setIndex == prefetch_buf_setIndex);
-
-		// next line not in the cache, then prefetch it
-		if(!nextline_hit)
-		{
-    		const ADDRINT LineMask = lineSize - 1;
-    		ADDRINT offset = addr & LineMask;
-
-			// this is trying to make it more realistic. Assuming L2 hit latency
-			// is 10 cycles, and 4B/inst on average, an prefetching will have to be
-			// issued 40 Bytes in advance for it to be effective. So we only prefetch
-			// the nextline if the current instruction is within the first "LineSize() - 10 * 4"
-			// Bytes of a line. In reality, one might still want to issue the request
-			// for the next line earlier because it may save a few miss cycles.
-			if(offset <= LineSize() - 10 * 4)
-		    {
-				_prefetch_buf = nextline_addr; // even though prefetch_buf_nextline_hit might be true, we are just overwriting it
-			}
-		}
-		final_hit = hit || prefetch_buf_currentline_hit;
+		ACS_PKG _t_acs_pkg = _inst_stream.front();
+		_inst_stream.pop();
+		opt_cache_acs(_t_acs_pkg);
+		ASSERTX(_inst_stream.size() == 1000000);
 	}
 
-    // on miss, loads always allocate, stores optionally
-    if ( (! hit) && (accessType == ACCESS_TYPE_LOAD || STORE_ALLOCATION == CACHE_ALLOC::STORE_ALLOCATE))
-    {
-        set.Replace(tag); // This could be filled from either L2 or prefetcher buffer
-    }
-
-    _access[accessType][final_hit]++;
-
-    return hit;
+    return true; // doesn't matter for icache
 }
 
 // define shortcuts
 #define CACHE_DIRECT_MAPPED(MAX_SETS, ALLOCATION) CACHE<CACHE_SET::DIRECT_MAPPED, MAX_SETS, ALLOCATION>
 #define CACHE_ROUND_ROBIN(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::ROUND_ROBIN<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
 #define CACHE_LRU(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::LRU<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
-#define CACHE_BIP(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION, EPSILON) CACHE<CACHE_SET::BIP<MAX_ASSOCIATIVITY, EPSILON>, MAX_SETS, ALLOCATION>
+#define CACHE_OPT(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::OPT<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
 
 #endif // PIN_CACHE_H

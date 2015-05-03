@@ -32,6 +32,7 @@ END_LEGAL */
 #include <fstream>
 #include "pin.H"
 #include <vector>
+#include <map>
 #include <assert.h>
 
 using namespace std;
@@ -40,42 +41,39 @@ ofstream OutFile;
 
 // The running count of instructions is kept here
 // make it static to help the compiler optimize docount
-static UINT64 icount = 0;
-
 static bool enabled = false;
 vector<unsigned int> per_event_inscount;
-vector<unsigned int> misc_inscount;
 
-// This function is called before every instruction is executed
-//VOID docount() { if(enabled) icount++; }
-VOID docount(THREADID threadId) { if(threadId == 0) icount++; }
-    
 /* ===================================================================== */
 
-VOID EnableCache(THREADID threadId)
+VOID EnableCache()
 {
-	if(threadId == 0)
-	{
-    	assert(!enabled);
-    	enabled = true;
-		cout << "event start" << endl;
-		misc_inscount.push_back(icount);
-		icount = 0;
-	}
+    assert(!enabled);
+    enabled = true;
+	//cout << "event start" << endl;
+	OutFile << "event start" << endl;
 }
 
 /* ===================================================================== */
 
-VOID DisableCache(THREADID threadId)
+VOID DisableCache()
 {
-	if(threadId == 0)
-	{
-    	assert(enabled);
-    	enabled = false;
-		cout << "event stop" << endl;
-		per_event_inscount.push_back(icount);
-		icount = 0;
-	}
+    assert(enabled);
+    enabled = false;
+	//cout << "event stop" << endl;
+	OutFile << "event stop" << endl;
+}
+
+std::map<ADDRINT, UINT64> ins_map;
+
+VOID ins_dump(THREADID threadId, ADDRINT ins_addr)
+{
+	if((threadId != 0) || !enabled) return;
+
+	UINT64 hash_ins_addr = ins_addr;
+
+	if(ins_map.find(hash_ins_addr) == ins_map.end()) ins_map[hash_ins_addr] = ins_map.size();
+	OutFile << ins_map[hash_ins_addr] << endl;
 }
 
 // Pin calls this function every time a new instruction is encountered
@@ -87,32 +85,44 @@ VOID Instruction(INS ins, VOID *v)
         if (RTN_Valid(rtn)) {
             string rtn_name = RTN_Name(rtn);
             if (rtn_name == "pin_start") {
-				cout << "start found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableCache, IARG_THREAD_ID, IARG_END);
+				//cout << "start found" << endl;
+                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableCache, IARG_END);
             } else if (rtn_name == "pin_end") {
-				cout << "stop found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableCache, IARG_THREAD_ID, IARG_END);
+				//cout << "stop found" << endl;
+                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableCache, IARG_END);
             }
         }
     }
 
     // Insert a call to docount before every instruction, no arguments are passed
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_THREAD_ID, IARG_END);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_dump, IARG_THREAD_ID, IARG_ADDRINT, INS_Address(ins), IARG_END);
+}
+
+std::map<ADDRINT, UINT64> rtn_map;
+
+VOID rtn_mark(THREADID threadId, ADDRINT rtn_addr)
+{
+	if((threadId != 0) || !enabled) return;
+
+	if(rtn_map.find(rtn_addr) == rtn_map.end()) rtn_map[rtn_addr] = rtn_map.size();
+	OutFile << rtn_map[rtn_addr] << endl;
+}
+
+VOID Routine(RTN rtn, VOID *v)
+{
+    string rtn_name = RTN_Name(rtn);
+
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, AFUNPTR(rtn_mark), IARG_THREAD_ID, IARG_ADDRINT, INS_Address(RTN_InsHead(rtn)), IARG_END);
+    RTN_Close(rtn);
 }
 
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool",
-    "o", "inscount.out", "specify output file name");
+    "o", "rtnaddr.out", "specify output file name");
 
 // This function is called when the application exits
 VOID Fini(INT32 code, VOID *v)
 {
-    // Write to a file since cout and cerr maybe closed by the application
-    OutFile.setf(ios::showbase);
-	for(unsigned int i = 0;i < per_event_inscount.size();i++)
-	{
-    	OutFile << per_event_inscount[i] << endl;
-    	OutFile << misc_inscount[i + 1] << endl;
-	}
     OutFile.close();
 }
 
@@ -144,6 +154,8 @@ int main(int argc, char * argv[])
 
     // Register Instruction to be called to instrument instructions
     INS_AddInstrumentFunction(Instruction, 0);
+
+    //RTN_AddInstrumentFunction(Routine, 0);
 
     // Register Fini to be called when the application exits
     PIN_AddFiniFunction(Fini, 0);

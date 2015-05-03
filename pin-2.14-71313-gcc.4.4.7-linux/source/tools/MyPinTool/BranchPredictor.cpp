@@ -94,6 +94,7 @@ VOID EnablePrediction(THREADID threadId)
 {
     assert(!enabled[threadId]);
     enabled[threadId] = true;
+	cout << "event start" << endl;
 }
 
 /* ===================================================================== */
@@ -102,6 +103,7 @@ VOID DisablePrediction(THREADID threadId)
 {
     assert(enabled[threadId]);
     enabled[threadId] = false;
+	cout << "event stop" << endl;
 }
 
 /* ===================================================================== */
