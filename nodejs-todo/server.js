@@ -79,3 +79,10 @@ app.post('/todos/delete', function(req, res) {
 server.listen(process.env.PORT || config.port, config.host);
 console.log("server waiting on " + config.host + ":" + config.port);
 console.log("BEGIN SENDING HTTP REQUESTS");
+var fs = require('fs');
+fs.writeFile("/tmp/nodejs-todo", "meow!", function(err) {
+    if(err) {
+        return console.log(err);
+    }
+    console.log("The file was saved!");
+}); 
