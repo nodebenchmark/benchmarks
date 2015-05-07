@@ -43,29 +43,29 @@ benchmark_registry = {
 
 basedir = os.getcwd()
 
-print "benchmark is %s" % benchmark
+#print "benchmark is %s" % benchmark
 
 benchmark_info = benchmark_registry[benchmark]
 benchmark_dir = benchmark
 startup_script = benchmark_info["startup_script"]
 
-os.chdir(benchmark_dir)
 
 if not client_only:
-
-    node_run_cmd = "%s %s %s" % (instrumentation, node_binary, startup_script)
+#
+    node_run_cmd = "%s %s %s %s" % (instrumentation, node_binary, startup_script, benchmark)
     print node_run_cmd
-    
-    
-    node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
-    for line in iter(node.stdout.readline, ''):
-        print line.strip("\r\n")
-        if "BEGIN SENDING HTTP REQUESTS" in line:
-            time.sleep(30)
-    	    break
-
+#    
+#    
+#    node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
+#    for line in iter(node.stdout.readline, ''):
+#        print line.strip("\r\n")
+#        if "BEGIN SENDING HTTP REQUESTS" in line:
+#            time.sleep(30)
+#    	    break
+#
 if not server_only:
 
+    #os.chdir(benchmark_dir)
     files = filter(lambda f: "_nodebench.py" in f, [d for d in os.listdir('.')])
     execfile(files[0]) # TODO make work for multiple files
 
@@ -97,8 +97,7 @@ if not server_only:
                     continue
     
     assert all(s == len(user_requests) for s in state), "All requests did not execute"
-    node.send_signal(signal.SIGINT)
-    for line in iter(node.stdout.readline, ''):
-        print line.strip("\r\n")
-
-os.chdir(basedir)
+    #node.send_signal(signal.SIGINT)
+    #for line in iter(node.stdout.readline, ''):
+    #    print line.strip("\r\n")
+    #os.chdir(basedir)
