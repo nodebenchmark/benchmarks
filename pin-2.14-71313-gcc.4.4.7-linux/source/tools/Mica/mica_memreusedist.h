@@ -13,6 +13,6 @@ void init_memreusedist();
 VOID instrument_memreusedist(INS ins, VOID* v);
 VOID fini_memreusedist(INT32 code, VOID* v);
 
-VOID memreusedist_memRead(ADDRINT effMemAddr, ADDRINT size);
+VOID memreusedist_memRead(THREADID threadId, ADDRINT effMemAddr, ADDRINT size);
 VOID memreusedist_instr_interval_output();
 VOID memreusedist_instr_interval_reset();

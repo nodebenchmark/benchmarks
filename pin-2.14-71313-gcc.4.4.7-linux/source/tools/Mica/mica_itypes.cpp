@@ -13,6 +13,8 @@
 #include "mica_utils.h"
 #include "mica_itypes.h"
 
+#include <map>
+
 /* Global variables */
 
 extern INT64 interval_size;
@@ -32,6 +34,28 @@ INT64 number_of_groups;
 INT64 other_ids_cnt;
 INT64 other_ids_max_cnt;
 identifier* other_group_identifiers;
+
+std::map<ADDRINT,UINT64> backwardsBranches;
+
+/* utility functions */
+BOOL is_backwards_branch(THREADID threadId, ADDRINT branch_addr, ADDRINT target_addr)
+{
+    if (!enabled[threadId])
+        return false;
+
+    return target_addr <= branch_addr;
+}
+
+VOID count_backwards_branch(THREADID threadId, ADDRINT branch_addr, ADDRINT target_addr)
+{
+    ADDRINT delta = branch_addr - target_addr;
+    std::map<ADDRINT,UINT64>::iterator iter = backwardsBranches.find(delta);
+    if (iter == backwardsBranches.end()) {
+        backwardsBranches.insert(std::pair<UINT64,UINT64>(delta, 1));
+    } else {
+        ++iter->second;
+    }
+}
 
 /* counter functions */
 ADDRINT itypes_instr_intervals(){
@@ -357,6 +381,17 @@ VOID instrument_itypes(INS ins, VOID* v){
                         } else if (strcmp(group_identifiers[i][j].str, "indirect") == 0 && INS_IsIndirectBranchOrCall(ins) ) {
                             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)itypes_count, IARG_THREAD_ID, IARG_UINT32, i, IARG_END);
                             categorized = true;
+                        } else if (strcmp(group_identifiers[i][j].str, "taken_control") == 0 && INS_IsBranchOrCall(ins) ) {
+                            INS_InsertCall(ins, IPOINT_TAKEN_BRANCH, (AFUNPTR)itypes_count, IARG_THREAD_ID, IARG_UINT32, i, IARG_END);
+
+                            // Check for loops.
+                            if (INS_IsDirectBranch(ins)) {
+                                INS_InsertIfCall(ins, IPOINT_TAKEN_BRANCH, (AFUNPTR)is_backwards_branch, IARG_THREAD_ID,
+                                        IARG_ADDRINT, INS_DirectBranchOrCallTargetAddress(ins), IARG_END);
+                                INS_InsertThenCall(ins, IPOINT_TAKEN_BRANCH, (AFUNPTR)count_backwards_branch, IARG_THREAD_ID,
+                                        IARG_ADDRINT, INS_DirectBranchOrCallTargetAddress(ins), IARG_END);
+                            }
+                            categorized = true;
                         } else {
                         }
                     }
@@ -410,6 +445,12 @@ VOID fini_itypes(INT32 code, VOID* v){
 		for(i=0; i < number_of_groups+1; i++){
 			result_file << " " << group_counts[i];
 		}
+        result_file << endl;
+        result_file << "Backward branches:" << std::endl;
+        for (std::map<ADDRINT,UINT64>::iterator j = backwardsBranches.begin(),
+                je = backwardsBranches.end(); j != je; ++j) {
+            result_file << j->first << " " << j->second << std::endl;
+        }
 		result_file << endl;
 	}
 	else{

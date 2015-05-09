@@ -111,8 +111,8 @@ ADDRINT all_buffer_instruction_2reads_write(void* _e, ADDRINT read1_addr, ADDRIN
 	memOp(read1_addr, read_size); // memfootprint
 	memOp(read2_addr, read_size);
 	memOp(write_addr, write_size);
-	memreusedist_memRead(read1_addr, read_size); // memreusedist
-	memreusedist_memRead(read2_addr, read_size);
+	memreusedist_memRead(IARG_THREAD_ID, read1_addr, read_size); // memreusedist
+	memreusedist_memRead(IARG_THREAD_ID, read2_addr, read_size);
 	//return ilp_buffer_instruction_2reads_write(_e, read1_addr, read2_addr, read_size, write_addr, write_size);
 	ilp_buffer_instruction_only(_e);
 	ilp_buffer_instruction_read(read1_addr, read_size);
@@ -129,7 +129,7 @@ ADDRINT all_buffer_instruction_read_write(void* _e, ADDRINT read1_addr, ADDRINT 
 	writeMem_stride(stride_index_memwrite, write_addr, write_size);
 	memOp(read1_addr, read_size); // memfootprint
 	memOp(write_addr, write_size);
-	memreusedist_memRead(read1_addr, read_size); // memreusedist
+	memreusedist_memRead(IARG_THREAD_ID, read1_addr, read_size); // memreusedist
 	//return ilp_buffer_instruction_read_write(_e, read1_addr, read_size, write_addr, write_size);
 	ilp_buffer_instruction_only(_e);
 	ilp_buffer_instruction_read(read1_addr, read_size);
@@ -144,8 +144,8 @@ ADDRINT all_buffer_instruction_2reads(void* _e, ADDRINT read1_addr, ADDRINT read
 	readMem_stride(stride_index_memread2, read2_addr, read_size);
 	memOp(read1_addr, read_size); // memfootprint
 	memOp(read2_addr, read_size);
-	memreusedist_memRead(read1_addr, read_size); // memreusedist
-	memreusedist_memRead(read2_addr, read_size);
+	memreusedist_memRead(IARG_THREAD_ID, read1_addr, read_size); // memreusedist
+	memreusedist_memRead(IARG_THREAD_ID, read2_addr, read_size);
 	//return ilp_buffer_instruction_2reads(_e, read1_addr, read2_addr, read_size);
 	ilp_buffer_instruction_only(_e);
 	ilp_buffer_instruction_read(read1_addr, read_size);
@@ -158,7 +158,7 @@ ADDRINT all_buffer_instruction_read(void* _e, ADDRINT read1_addr, ADDRINT read_s
 	//itypes_count_mem_read();
 	readMem_stride(stride_index_memread1, read1_addr, read_size);
 	memOp(read1_addr, read_size); // memfootprint
-	memreusedist_memRead(read1_addr, read_size); // memreusedist
+	memreusedist_memRead(IARG_THREAD_ID, read1_addr, read_size); // memreusedist
 	//return ilp_buffer_instruction_read(_e, read1_addr, read_size);
 	ilp_buffer_instruction_only(_e);
 	ilp_buffer_instruction_read(read1_addr, read_size);

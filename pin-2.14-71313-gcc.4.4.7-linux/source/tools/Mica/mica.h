@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <fstream>
 #include <iostream>
@@ -18,7 +19,6 @@ using namespace std;
 
 /* Pin includes */
 #include "pin.H"
-//#include "pinplay.H"
 
 
 #ifndef MICA
@@ -81,7 +81,7 @@ const UINT32 history_lengths[NUM_HIST_LENGTHS] = {12,8,4};
 
 /* MEMREUSEDIST */
 
-#define BUCKET_CNT 19 // number of reuse distance buckets to use
+#define BUCKET_CNT 21 // number of reuse distance buckets to use
 
 const char *mkfilename(const char *name);
 

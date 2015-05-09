@@ -31,7 +31,7 @@ void setup_mica_log(ofstream *log){
  * itypes_spec_file: <string>
  */
 
-enum CONFIG_PARAM {UNKNOWN_CONFIG_PARAM = -1, ANALYSIS_TYPE = 0, INTERVAL_SIZE, ILP_SIZE, BLOCK_SIZE, PAGE_SIZE, ITYPES_SPEC_FILE, APPEND_PID, CONF_PAR_CNT};
+enum CONFIG_PARAM {UNKNOWN_CONFIG_PARAM = -1, ANALYSIS_TYPE = 0, INTERVAL_SIZE, ILP_SIZE, BLOCK_SIZE, COUNT_BYTES, PAGE_SIZE, ITYPES_SPEC_FILE, APPEND_PID, CONF_PAR_CNT};
 const char* config_params_str[CONF_PAR_CNT] = {"analysis_type",   "interval_size", "ilp_size", "block_size", "page_size", "itypes_spec_file"};
 enum ANALYSIS_TYPE {UNKNOWN_ANALYSIS_TYPE = -1, ALL=0, ILP, ILP_ONE, ITYPES, PPM, MICA_REG, STRIDE, MEMFOOTPRINT, MEMREUSEDIST, CUSTOM, ANA_TYPE_CNT};
 const char* analysis_types_str[ANA_TYPE_CNT] = { "all",   "ilp", "ilp_one", "itypes", "ppm", "reg", "stride", "memfootprint", "memreusedist", "custom"};
@@ -42,6 +42,7 @@ enum CONFIG_PARAM findConfigParam(char* s){
 	if(strcmp(s, "interval_size") == 0){ return INTERVAL_SIZE; }
 	if(strcmp(s, "ilp_size") == 0){ return ILP_SIZE; }
 	if(strcmp(s, "block_size") == 0){ return BLOCK_SIZE; }
+    if(strcmp(s, "count_bytes") == 0){ return COUNT_BYTES; }
 	if(strcmp(s, "page_size") == 0){ return PAGE_SIZE; }
 	if(strcmp(s, "itypes_spec_file") == 0){ return ITYPES_SPEC_FILE; }
 	if(strcmp(s, "append_pid") == 0){ return APPEND_PID; }
@@ -65,7 +66,7 @@ enum ANALYSIS_TYPE findAnalysisType(char* s){
 	return UNKNOWN_ANALYSIS_TYPE;
 }
 
-void read_config(ofstream* log, INT64* intervalSize, MODE* mode, UINT32* _ilp_win_size, UINT32* _block_size, UINT32* _page_size, char** _itypes_spec_file, int* append_pid){
+void read_config(ofstream* log, INT64* intervalSize, MODE* mode, UINT32* _ilp_win_size, UINT32* _block_size, INT32* _count_bytes, UINT32* _page_size, char** _itypes_spec_file, int* append_pid){
 
 	int i;
 	char* param;
@@ -88,6 +89,7 @@ void read_config(ofstream* log, INT64* intervalSize, MODE* mode, UINT32* _ilp_wi
 	*mode = UNKNOWN_MODE;
 	*_ilp_win_size = 0;
 	*_block_size = 6; // default block size = 64 bytes (2^6)
+    *_count_bytes = 0;
 	*_page_size = 12; // default page size = 4KB (2^12)
 
 	while(!feof(config_file)){
@@ -204,6 +206,12 @@ void read_config(ofstream* log, INT64* intervalSize, MODE* mode, UINT32* _ilp_wi
 				cerr << "block size: 2^" << *_block_size << endl;
 				(*log) << "block size: 2^" << *_block_size << endl;
 				break;
+
+            case COUNT_BYTES:
+                *_count_bytes = (INT32)atoi(val);
+                cerr << "count bytes: " << *_count_bytes << endl;
+                (*log) << "count bytes: " << *_count_bytes << endl;
+                break;
 
 			case PAGE_SIZE:
 				*_page_size = (UINT32)atoi(val);

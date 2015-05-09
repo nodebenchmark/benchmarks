@@ -39,19 +39,10 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sys/types.h>
-#include <unistd.h>
 using namespace std;
 
 /* *** Variables *** */
 
-//PINPLAY_ENGINE pinplay_engine;
-//KNOB<BOOL> KnobPinPlayLogger(KNOB_MODE_WRITEONCE,
-//        "pintool", "log", "0",
-//        "Activate the pinplay logger");
-//KNOB<BOOL> KnobPinPlayReplayer(KNOB_MODE_WRITEONCE,
-//        "pintool", "replay", "0",
-//        "Activate the pinplay replayer");
 KNOB<BOOL> KnobAlwaysOn(KNOB_MODE_WRITEONCE, "pintool",
         "always-on", "0", "simulate for all instructions regardless of start_pin and start_end");
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool",
@@ -67,6 +58,7 @@ INT64 total_ins_count_for_hpc_alignment;
 ofstream result_file;
 bool enabled[128];
 bool alwaysOn;
+MODE mode;
 
 ins_buffer_entry* ins_buffer[MAX_MEM_TABLE_ENTRIES];
 
@@ -76,6 +68,9 @@ char* _itypes_spec_file;
 
 /* ILP, MEMFOOTPRINT, MEMREUSEDIST */
 UINT32 _block_size;
+
+/* MEMREUSEDIST */
+INT32 _count_bytes;
 
 /* MEMFOOTPRINT */
 UINT32 _page_size;
@@ -531,7 +526,6 @@ VOID EnableTracking(THREADID threadId)
 {
     assert(!enabled[threadId]);
     enabled[threadId] = true;
-	cout << "event start" << endl;
 }
 
 /* ===================================================================== */
@@ -540,7 +534,11 @@ VOID DisableTracking(THREADID threadId)
 {
     assert(enabled[threadId]);
     enabled[threadId] = false;
-	cout << "event stop" << endl;
+
+    if (mode == MODE_MEMREUSEDIST && interval_size != -1) {
+        memreusedist_instr_interval_output();
+        memreusedist_instr_interval_reset();
+    }
 }
 
 /* ===================================================================== */
@@ -554,10 +552,8 @@ VOID PinControls(INS ins, void *v)
             if (RTN_Valid(rtn)) {
                 string rtn_name = RTN_Name(rtn);
                 if (rtn_name == "pin_start") {
-					cout << "start found" << endl;
                     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableTracking, IARG_THREAD_ID, IARG_END);
                 } else if (rtn_name == "pin_end") {
-					cout << "stop found" << endl;
                     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableTracking, IARG_THREAD_ID, IARG_END);
                 }
             }
@@ -587,15 +583,13 @@ int main(int argc, char* argv[]){
 
     PIN_InitSymbols();
     PIN_Init(argc, argv);
-    //pinplay_engine.Activate(argc, argv, KnobPinPlayLogger, KnobPinPlayReplayer);
     alwaysOn = KnobAlwaysOn.Value();
 
 	int i;
-	MODE mode;
 
 	setup_mica_log(&log);
 
-	read_config(&log, &interval_size, &mode, &_ilp_win_size, &_block_size, &_page_size, &_itypes_spec_file, &append_pid);
+	read_config(&log, &interval_size, &mode, &_ilp_win_size, &_block_size, &_count_bytes, &_page_size, &_itypes_spec_file, &append_pid);
 
 	cerr << "interval_size: " << interval_size << ", mode: " << mode << endl;
 
