@@ -317,11 +317,6 @@ VOID FetchSingle(THREADID threadId, ADDRINT addr)
 
 /* ===================================================================== */
 
-map<ADDRINT, HM_PAIR*> instMap; // mapping from inst addr to hit and miss counts
-map<ADDRINT, UINT64> staticInstMap; // mapping from inst addr to inst id
-list<UINT64> missSeq; // miss sequence using inst id
-map<string, HM_PAIR*> funcMap; // mapping from function name to hit and miss counts
-
 VOID FetchMulti(THREADID threadId, ADDRINT addr, UINT32 size)
 {
     if (!enabled[threadId])
