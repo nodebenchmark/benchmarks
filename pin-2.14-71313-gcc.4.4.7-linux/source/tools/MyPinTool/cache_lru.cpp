@@ -48,6 +48,7 @@ END_LEGAL */
 #include "pin_profile.H"
 
 #include <stdlib.h>
+#include <string.h>
 
 std::ofstream outFile;
 PIN_LOCK lock;
@@ -63,6 +64,10 @@ KNOB<BOOL> KnobDCEnable(KNOB_MODE_WRITEONCE,    "pintool",
 
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE,    "pintool",
     "o", "cache.out", "specify icache file name");
+KNOB<string> KnobINSTHMOutputFile(KNOB_MODE_WRITEONCE,    "pintool",
+    "f", "missseq.out", "specify output file name for instbin");
+KNOB<string> KnobFUNCHMOutputFile(KNOB_MODE_WRITEONCE,    "pintool",
+    "m", "funchm.out", "specify output file name for function hit/miss");
 KNOB<BOOL>   KnobTrackLoads(KNOB_MODE_WRITEONCE,    "pintool",
     "tl", "0", "track individual loads -- increases profiling time");
 KNOB<BOOL>   KnobTrackStores(KNOB_MODE_WRITEONCE,   "pintool",
@@ -87,6 +92,12 @@ KNOB<UINT32> KnobIL1Associativity(KNOB_MODE_WRITEONCE, "pintool",
     "il1assoc","8", "cache associativity (1 for direct mapped)");
 KNOB<UINT32> KnobIL1PREFETCH(KNOB_MODE_WRITEONCE, "pintool",
     "il1pf","1", "L1 instruction cache prefetching enabled");
+KNOB<INT32> KnobIL1BIPEPSILON(KNOB_MODE_WRITEONCE, "pintool",
+    "il1epsilon","-1", "L1 instruction cache BIP EPSILON");
+KNOB<BOOL> KnobIL1MISSSEQ(KNOB_MODE_WRITEONCE, "pintool",
+    "il1missseq","0", "enable collecting L1 instruction cache miss sequence stats");
+KNOB<BOOL> KnobIL1FUNCHM(KNOB_MODE_WRITEONCE, "pintool",
+    "il1funchm","0", "enable collecting L1 instruction cache function hit/miss");
 
 KNOB<UINT32> KnobL2CacheSize(KNOB_MODE_WRITEONCE, "pintool",
     "l2size","256", "cache size in kilobytes");
@@ -271,7 +282,7 @@ VOID LoadSingleFast(THREADID threadId, ADDRINT addr)
     if (!enabled[threadId])
         return;
 
-    dl1[threadId]->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);    
+    dl1[threadId]->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
     //if (!dl1Hit) {
     //    l2->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
     //}
@@ -284,7 +295,7 @@ VOID StoreSingleFast(THREADID threadId, ADDRINT addr)
     if (!enabled[threadId])
         return;
 
-    dl1[threadId]->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_STORE);    
+    dl1[threadId]->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_STORE);
     //if (!dl1Hit) {
     //    l2->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_STORE);
     //}
@@ -292,28 +303,26 @@ VOID StoreSingleFast(THREADID threadId, ADDRINT addr)
 
 /* ===================================================================== */
 
-VOID FetchSingle(THREADID threadId, ADDRINT addr, UINT32 instId)
+VOID FetchSingle(THREADID threadId, ADDRINT addr)
 {
     if (!enabled[threadId])
         return;
 
+    insts[threadId]++;
+
     il1[threadId]->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
-    //if (!hit) {
-    //    l2->AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
-    //}
 }
 
 /* ===================================================================== */
 
-VOID FetchMulti(THREADID threadId, ADDRINT addr, UINT32 size, UINT32 instId)
+VOID FetchMulti(THREADID threadId, ADDRINT addr, UINT32 size)
 {
     if (!enabled[threadId])
         return;
 
+    insts[threadId]++;
+
     il1[threadId]->Access(addr, size, CACHE_BASE::ACCESS_TYPE_LOAD);
-    //if (!hit) {
-    //    l2->Access(addr, size, CACHE_BASE::ACCESS_TYPE_LOAD);
-    //}
 }
 
 /* ===================================================================== */
@@ -360,23 +369,6 @@ VOID DisableCache(THREADID threadId)
 	cout << "event stop" << endl;
 }
 
-/* ===================================================================== */
-
-VOID CountInstructions(THREADID threadId, UINT32 instsInBbl)
-{
-    insts[threadId] += instsInBbl;
-}
-
-/* ===================================================================== */
-
-VOID BasicBlock(TRACE trace, void *v)
-{
-    for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl))
-    {
-        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)CountInstructions, IARG_THREAD_ID, IARG_UINT32, BBL_NumIns(bbl), IARG_END);
-    }
-}
-
 VOID Instruction(INS ins, void * v)
 {
     // Check for pin_start() and pin_end()
@@ -399,26 +391,14 @@ VOID Instruction(INS ins, void * v)
     if( KnobICEnable )
 	{
         // All instructions go to the instruction cache
-        const ADDRINT iaddr = INS_Address(ins);
-        const UINT32 instId = profile.Map(iaddr);
         const UINT32 size = INS_Size(ins);
-        const BOOL single = (size <= 4);
-        if (single) {
-            INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE, (AFUNPTR) FetchSingle,
-                    IARG_THREAD_ID,
-                    IARG_INST_PTR,
-                    IARG_UINT32, instId,
-                    IARG_END);
-        } else {
-            INS_InsertPredicatedCall(
-                    ins, IPOINT_BEFORE, (AFUNPTR) FetchMulti,
-                    IARG_THREAD_ID,
-                    IARG_INST_PTR,
-                    IARG_UINT32, size,
-                    IARG_UINT32, instId,
-                    IARG_END);
-        }
+
+        INS_InsertCall(
+                ins, IPOINT_BEFORE, (AFUNPTR) FetchMulti,
+                IARG_THREAD_ID,
+                IARG_INST_PTR,
+                IARG_UINT32, size,
+                IARG_END);
     }
 
     if( KnobDCEnable )
@@ -545,13 +525,15 @@ VOID StartThread(THREADID threadId, CONTEXT *ctxt, INT32 flags, VOID *v)
                          KnobDL1CacheSize.Value() * KILO,
                          KnobDL1LineSize.Value(),
                          KnobDL1Associativity.Value(),
-                         0);
+                         0,
+                         -1);
 
     il1[threadId] = new IL1::CACHE("L1 Instruction Cache",
                          KnobIL1CacheSize.Value() * KILO,
                          KnobIL1LineSize.Value(),
                          KnobIL1Associativity.Value(),
-                         KnobIL1PREFETCH.Value());
+                         KnobIL1PREFETCH.Value(),
+                         KnobIL1BIPEPSILON.Value());
     PIN_ReleaseLock(&lock);
 }
 
@@ -644,7 +626,6 @@ int main(int argc, char *argv[])
     profile.SetThreshold( threshold );
     
     INS_AddInstrumentFunction(Instruction, 0);
-    TRACE_AddInstrumentFunction(BasicBlock, 0);
     PIN_AddThreadFiniFunction(FiniThread, 0);
     PIN_AddFiniFunction(Fini, 0);
 

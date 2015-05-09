@@ -5,6 +5,8 @@
  */
 
 #include <assert.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <iterator>
 #include <iostream>
@@ -27,6 +29,7 @@ UINT64 bblCount = 0;        //number of dynamically executed basic blocks
 UINT64 threadCount = 0;     //total number of threads, including main thread
 
 std::ostream * out = &cerr;
+std::ostream * mapping = &cerr;
 
 typedef std::map<ADDRINT,UINT32> bblFootprint;
 
@@ -42,6 +45,8 @@ UINT64 prevInsts;
 /* ===================================================================== */
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE,  "pintool",
     "o", "", "specify file name for InstFootprint output");
+KNOB<string> KnobMappingFile(KNOB_MODE_WRITEONCE,  "pintool",
+    "m", "mapping.out", "specify file name for inst addr to func name mapping");
 KNOB<BOOL>   KnobAlwaysOn(KNOB_MODE_WRITEONCE, "pintool",
     "always-on", "0", "monitor program regardless of pin_start and pin_end directives");
 
@@ -68,7 +73,6 @@ struct ShoeSize {
     UINT64 staticInsts;
     UINT64 dynamicBytes;
     UINT64 dynamicInsts;
-	//UINT64 reusedBins[17];
 	std::map<ADDRINT, UINT64> instMap;
 };
 std::list< std::map<ADDRINT, UINT64> > eventsInstMap;
@@ -129,23 +133,13 @@ VOID DisableCounting(THREADID threadId)
 
     ShoeSize shoe = MeasureFootprint(footprints);
 
-    /* for dumping static-reuse stats */
+    /* for dumping how many times an instruction is referenced */
     //for (std::map<ADDRINT, UINT64>::iterator i = shoe.instMap.begin(),
     //    ie = shoe.instMap.end(); i != ie; ++i) {
 	//	*out << i->first << " " << i->second << endl;
 	//}
 	eventsInstMap.push_back(shoe.instMap);
     footprints->clear();
-
-	/* for dumping reuse bin stats */
-	//UINT64 total = 0;
-	//for(int i = 0;i <= 16;i++)
-	//{
-	//	*out << shoe.reusedBins[i] << ",";
-	//	total += shoe.reusedBins[i];
-	//}
-	//*out << total << "," << shoe.dynamicInsts << "," << shoe.staticBytes << endl;
-    //footprints->clear();
 
 	/* for dumping static/dynamic/sharing stats */
     //*out << shoe.staticBytes << "," << shoe.dynamicBytes << "," <<
@@ -165,6 +159,19 @@ VOID DisableCounting(THREADID threadId)
     //prevInsts = shoe.staticInsts;
 }
 
+map<ADDRINT, string> funcMap;
+
+VOID process_inst(THREADID threadId, ADDRINT ins_addr, VOID *rtn_name)
+{
+    if (!enabled[threadId])
+        return;
+
+	char *func = (char *)rtn_name;
+
+	std::string f(func);
+	if(funcMap.find(ins_addr) == funcMap.end()) funcMap[ins_addr] = f;
+}
+
 VOID CheckDirectives(INS ins, VOID *v)
 {
     // Check for pin_start() and pin_end()
@@ -181,6 +188,16 @@ VOID CheckDirectives(INS ins, VOID *v)
             }
         }
     }
+
+    // Insert a call to docount before every instruction, no arguments are passed
+    RTN rtn = INS_Rtn(ins);
+	string rtn_name;
+    if (RTN_Valid(rtn)) rtn_name = RTN_Name(rtn);
+	else rtn_name = "invalid_rtn";
+	char *p_rtn_name = (char *)malloc((rtn_name.size() + 1) * sizeof(char));
+	strcpy(p_rtn_name, rtn_name.c_str());
+
+   	INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)process_inst, IARG_THREAD_ID, IARG_ADDRINT, INS_Address(ins), IARG_PTR, p_rtn_name, IARG_END);
 }
 
 /*!
@@ -234,59 +251,36 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
         return;
 
 	cout << "Start processing all events" << endl;
+	/* dumping inst addr to function name mapping */
+	map<ADDRINT, string>::iterator fit;
+	for(fit = funcMap.begin();fit != funcMap.end();fit++)
+	{
+		*mapping << fit->first << " " << fit->second << endl;
+	}
 
 	/* One event per row */
-	std::set<ADDRINT>::iterator it;
-	*out << "inst";
-	for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
-	{
-		*out << " " << *it;
-	}
-	*out << endl;
-
-	UINT64 event_id = 0;
-	while(!eventsInstMap.empty())
-	{
-		*out << "e_" << event_id++;
-		std::map<ADDRINT, UINT64> cur_event_instMap = eventsInstMap.front();
-		eventsInstMap.pop_front();
-
-		std::set<ADDRINT>::iterator kt;
-		for(kt = global_staticInstsSet.begin();kt != global_staticInstsSet.end();kt++)
-		{
-			ADDRINT inst = *kt;
-			if(cur_event_instMap.find(inst) != cur_event_instMap.end())
-			{
-				*out << " " << cur_event_instMap[inst];
-			}
-			else
-			{
-				*out << " 0";
-			}
-		}
-		*out << endl;
-	}
-
-	/* One instruction per row */
+	//std::set<ADDRINT>::iterator it;
 	//*out << "inst";
-	//for(unsigned int i = 0;i < eventsInstMap.size();i++)
+	//for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
 	//{
-	//	*out << " e_" << i;
+	//	*out << " " << *it;
 	//}
 	//*out << endl;
 
-	//std::set<ADDRINT>::iterator it;
-	//for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
+	//UINT64 event_id = 0;
+	//while(!eventsInstMap.empty())
 	//{
-	//	ADDRINT inst = *it;
-	//	*out << inst;
+	//	*out << "e_" << event_id++;
+	//	std::map<ADDRINT, UINT64> cur_event_instMap = eventsInstMap.front();
+	//	eventsInstMap.pop_front();
 
-	//	std::list< std::map<ADDRINT, UINT64> >::iterator kt;
-	//	for(kt = eventsInstMap.begin();kt != eventsInstMap.end();kt++)
+	//	std::set<ADDRINT>::iterator kt;
+	//	for(kt = global_staticInstsSet.begin();kt != global_staticInstsSet.end();kt++)
 	//	{
-	//		if(kt->find(inst) != kt->end())
+	//		ADDRINT inst = *kt;
+	//		if(cur_event_instMap.find(inst) != cur_event_instMap.end())
 	//		{
-	//			*out << " " << (*kt)[inst];
+	//			*out << " " << cur_event_instMap[inst];
 	//		}
 	//		else
 	//		{
@@ -296,24 +290,43 @@ VOID Fini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
 	//	*out << endl;
 	//}
 
+	/* One instruction per row */
+	*out << "inst";
+	for(unsigned int i = 0;i < eventsInstMap.size();i++)
+	{
+		*out << " e_" << i;
+	}
+	*out << endl;
+
+	std::set<ADDRINT>::iterator it;
+	for(it = global_staticInstsSet.begin();it != global_staticInstsSet.end();it++)
+	{
+		ADDRINT inst = *it;
+		*out << inst;
+
+		std::list< std::map<ADDRINT, UINT64> >::iterator kt;
+		for(kt = eventsInstMap.begin();kt != eventsInstMap.end();kt++)
+		{
+			if(kt->find(inst) != kt->end())
+			{
+				*out << " " << (*kt)[inst];
+			}
+			else
+			{
+				*out << " 0";
+			}
+		}
+		*out << endl;
+	}
+
 	cout << "Finish processing all events" << endl;
 
     //ShoeSize shoe = MeasureFootprint(bigfoot);
-
-    /* for dumping static inst-reuse stats */
+    /* for dumping how many times an instruction is referenced */
     //for (std::map<ADDRINT, UINT64>::iterator i = shoe.instMap.begin(),
     //    ie = shoe.instMap.end(); i != ie; ++i) {
 	//	*out << i->first << " " << i->second << endl;
 	//}
-
-	/* for dumping reuse bin stats */
-	//UINT64 total = 0;
-	//for(int i = 0;i <= 16;i++)
-	//{
-	//	*out << shoe.reusedBins[i] << ",";
-	//	total += shoe.reusedBins[i];
-	//}
-	//*out << total << "," << shoe.dynamicInsts << "," << shoe.staticBytes << endl;
 
 	/* for dumping static/dynamic/sharing stats */
     //*out << endl;
@@ -326,8 +339,6 @@ ShoeSize MeasureFootprint(std::map<bblFootprint*,UINT32> *prints)
     UINT64 inst_count = 0;
     ShoeSize shoe;
 	std::map<ADDRINT, UINT64> inst_Map; // mapping from the instruction addr to the number of times it's referenced
-
-	//for(int i = 0;i <= 16;i++) shoe.reusedBins[i] = 0;
 
     std::set<ADDRINT> static_footprint;
     std::set<ADDRINT> static_insts;
@@ -365,16 +376,6 @@ ShoeSize MeasureFootprint(std::map<bblFootprint*,UINT32> *prints)
         inst_count += i->first->size() * i->second;
     }
 
-    //for (std::map<ADDRINT,UINT64>::iterator i = instMap.begin(),
-    //        ie = instMap.end(); i != ie; ++i)
-	//{
-	//	int bin_id;
-	//	if((i->second - 1) / 16 > 16) bin_id = 16;
-	//	else bin_id = (i->second - 1) / 16;
-	//	shoe.reusedBins[bin_id] += i->second - 1;
-	//	//shoe.reusedBins[bin_id]++;
-	//}
-
     shoe.staticBytes = static_footprint.size();
     shoe.staticInsts = static_insts.size();
     shoe.dynamicBytes = dynamic_footprint;
@@ -411,11 +412,10 @@ int main(int argc, char *argv[])
         enabled[i] = alwaysOn;
     }
     string fileName = KnobOutputFile.Value();
+    string mappingfileName = KnobMappingFile.Value();
 
     if (!fileName.empty()) { out = new std::ofstream(fileName.c_str());}
-    //for (int i = 0; i <= 16; ++i) {
-    //    *out << i << " Reuses,";
-    //}
+    if (!mappingfileName.empty()) { mapping = new std::ofstream(mappingfileName.c_str());}
     //*out << "Static Insts,Dynamic Insts,Static Bytes" << endl;
     //*out << "Static Bytes,Dynamic Bytes,Static Insts,Dynamic Insts,Bytes Shared,Insts Shared" << endl;
 

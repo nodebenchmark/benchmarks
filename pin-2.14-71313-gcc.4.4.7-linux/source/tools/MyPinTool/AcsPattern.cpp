@@ -32,6 +32,7 @@ END_LEGAL */
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <map>
 #include "pin.H"
 
 ofstream OutFile;
@@ -71,14 +72,25 @@ VOID EnableCache(THREADID threadId)
 {
     assert(!enabled[threadId]);
     enabled[threadId] = true;
-	cout << "event start" << endl;
+	OutFile << "event start" << endl;
 }
 
 VOID DisableCache(THREADID threadId)
 {
     assert(enabled[threadId]);
     enabled[threadId] = false;
-	cout << "event stop" << endl;
+	OutFile << "event stop" << endl;
+}
+
+std::map<ADDRINT, UINT64> ret_map;
+
+VOID rtn_proc(THREADID threadId, ADDRINT ins_addr)
+{
+    if (!enabled[threadId])
+        return;
+
+	if(ret_map.find(ins_addr) == ret_map.end()) ret_map[ins_addr] = ret_map.size();
+	OutFile << ret_map[ins_addr] << endl;
 }
 
 VOID Instruction(INS ins, void * v)
@@ -90,11 +102,12 @@ VOID Instruction(INS ins, void * v)
             string rtn_name = RTN_Name(rtn);
             if (rtn_name == "pin_start") {
 				cout << "start found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableCache, IARG_THREAD_ID, IARG_END);
+                INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableCache, IARG_THREAD_ID, IARG_END);
             } else if (rtn_name == "pin_end") {
 				cout << "stop found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableCache, IARG_THREAD_ID, IARG_END);
+                INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableCache, IARG_THREAD_ID, IARG_END);
             }
+            INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) rtn_proc, IARG_THREAD_ID, IARG_ADDRINT, INS_Address(ins), IARG_END);
         }
     }
 }
@@ -139,7 +152,7 @@ int main(int argc, char * argv[])
     OutFile.open(KnobOutputFile.Value().c_str());
 
     INS_AddInstrumentFunction(Instruction, 0);
-    TRACE_AddInstrumentFunction(Trace, 0);
+    //TRACE_AddInstrumentFunction(Trace, 0);
 
     // Register Fini to be called when the application exits
     PIN_AddFiniFunction(Fini, 0);

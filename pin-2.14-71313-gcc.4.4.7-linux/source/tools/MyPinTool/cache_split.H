@@ -659,9 +659,9 @@ class CACHE : public CACHE_BASE
 
     // modifiers
     /// Cache access from addr to addr+size-1
-    bool Access(ADDRINT addr, UINT32 size, ACCESS_TYPE accessType);
+    bool Access(ADDRINT addr, UINT32 size, ACCESS_TYPE accessType, string func);
     /// Cache access at addr that does not span cache lines
-    bool AccessSingleLine(ADDRINT addr, ACCESS_TYPE accessType);
+    bool AccessSingleLine(ADDRINT addr, ACCESS_TYPE accessType, string func);
 
 	string instHMStats()
 	{
@@ -712,6 +712,7 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACC
 {
     const ADDRINT highAddr = addr + size;
     bool allHit = true;
+	ADDRINT start_addr = addr;
 
     const ADDRINT lineSize = LineSize();
     const ADDRINT notLineMask = ~(lineSize - 1);
@@ -765,6 +766,29 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACC
         addr = (addr & notLineMask) + lineSize; // start of next cache line
     }
     while (addr < highAddr);
+
+#if 0
+	// for dumping hit and miss histograms of each instruction
+	if(instMap.find(start_addr) == instMap.end())
+		instMap[start_addr] = new HM_PAIR(0, 0);
+	if(allHit) instMap[start_addr]->_hit++;
+	else instMap[start_addr]->_miss++;
+
+	// for dumping hit and miss histograms of each function
+	if(funcMap.find(func) == funcMap.end())
+		funcMap[func] = new HM_PAIR(0, 0);
+	if(allHit) funcMap[func]->_hit++;
+	else funcMap[func]->_miss++;
+
+	// for dumping miss sequence
+	if(!allHit)
+	{
+		ADDRINT cacheline = start_addr & notLineMask;
+		if(staticInstMap.find(cacheline) == staticInstMap.end()) staticInstMap[cacheline] = staticInstMap.size();
+
+		missSeq.push_back(staticInstMap[cacheline]);
+	}
+#endif
 
     _access[accessType][allHit]++;
 
@@ -826,6 +850,29 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::AccessSingleLine(ADDRINT addr, ACCESS
     {
         set.Replace(tag); // This could be filled from either L2 or prefetcher buffer
     }
+
+#if 0
+	// for dumping hit and miss histograms of each instruction
+	if(instMap.find(addr) == instMap.end())
+		instMap[addr] = new HM_PAIR(0, 0);
+	if(final_hit) instMap[addr]->_hit++;
+	else instMap[addr]->_miss++;
+
+	// for dumping hit and miss histograms of each function
+	if(funcMap.find(func) == funcMap.end())
+		funcMap[func] = new HM_PAIR(0, 0);
+	if(final_hit) funcMap[func]->_hit++;
+	else funcMap[func]->_miss++;
+
+	// for dumping miss sequence
+	if(!final_hit)
+	{
+		ADDRINT cacheline = addr & notLineMask;
+		if(staticInstMap.find(cacheline) == staticInstMap.end()) staticInstMap[cacheline] = staticInstMap.size();
+
+		missSeq.push_back(staticInstMap[cacheline]);
+	}
+#endif
 
     _access[accessType][final_hit]++;
 

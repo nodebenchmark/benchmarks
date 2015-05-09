@@ -610,7 +610,7 @@ string CACHE_BASE::StatsLong(string prefix, CACHE_TYPE cache_type) const
            "  " +fltstr(100.0 * Misses() / Accesses(), 2, 6) + "%\n";
 
     out += prefix + ljstr("Total-MPKI:  ", headerWidth)
-           /*+ mydecstr(1000.0 * Misses() / Instructions(), 6, 10)*/ +
+           /*+ mydecstr(1000.0 * Misses() / Instructions(), numberWidth)*/ +
            "  " +fltstr(1000.0 * Misses() / Instructions(), 6, 10) + "\n";
         
     out += prefix + ljstr("Total-Accesses:  ", headerWidth)
@@ -635,10 +635,9 @@ class CACHE : public CACHE_BASE
     SET _sets[MAX_SETS];
 	ADDRINT _prefetch_buf;
 	BOOL _prefetch;
-	map<ADDRINT, HM_PAIR*> instMap; // mapping from inst addr to hit and miss counts
-	map<ADDRINT, UINT64> staticInstMap; // mapping from inst addr to inst id
-	list<UINT64> missSeq; // miss sequence using inst id
-	map<string, HM_PAIR*> funcMap; // mapping from function name to hit and miss counts
+	map<ADDRINT, HM_PAIR*> instMap;
+	map<ADDRINT, UINT64> staticInstMap;
+	list<ADDRINT> missSeq;
 
   public:
     // constructors/destructors
@@ -663,7 +662,7 @@ class CACHE : public CACHE_BASE
     /// Cache access at addr that does not span cache lines
     bool AccessSingleLine(ADDRINT addr, ACCESS_TYPE accessType);
 
-	string instHMStats()
+	string instHMReuseStats()
 	{
     	string out;
 
@@ -671,19 +670,6 @@ class CACHE : public CACHE_BASE
 		for(it = instMap.begin();it != instMap.end();it++)
 		{
 			out += mydecstr(it->first) + " " + mydecstr(it->second->_hit) + " " + mydecstr(it->second->_miss) + "\n";
-		}
-
-		return out;
-	}
-
-	string funcHMStats()
-	{
-    	string out;
-
-		typename map<string, HM_PAIR*>::iterator it;
-		for(it = funcMap.begin();it != funcMap.end();it++)
-		{
-			out += it->first + " " + mydecstr(it->second->_hit) + " " + mydecstr(it->second->_miss) + "\n";
 		}
 
 		return out;
@@ -712,6 +698,7 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACC
 {
     const ADDRINT highAddr = addr + size;
     bool allHit = true;
+	ADDRINT start_addr = addr;
 
     const ADDRINT lineSize = LineSize();
     const ADDRINT notLineMask = ~(lineSize - 1);
@@ -765,6 +752,22 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACC
         addr = (addr & notLineMask) + lineSize; // start of next cache line
     }
     while (addr < highAddr);
+
+#if 0
+	// for dumping hit and miss histograms of each instruction
+	if(instMap.find(start_addr) == instMap.end())
+		instMap[start_addr] = new HM_PAIR(0, 0);
+	if(allHit) instMap[start_addr]->_hit++;
+	else instMap[start_addr]->_miss++;
+#endif
+
+	if(!allHit)
+	{
+		ADDRINT cacheline = start_addr & notLineMask;
+		if(staticInstMap.find(cacheline) == staticInstMap.end()) staticInstMap[cacheline] = staticInstMap.size();
+
+		missSeq.push_back(staticInstMap[cacheline]);
+	}
 
     _access[accessType][allHit]++;
 
@@ -826,6 +829,22 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::AccessSingleLine(ADDRINT addr, ACCESS
     {
         set.Replace(tag); // This could be filled from either L2 or prefetcher buffer
     }
+
+#if 0
+	// for dumping hit and miss histograms of each instruction
+	if(instMap.find(addr) == instMap.end())
+		instMap[addr] = new HM_PAIR(0, 0);
+	if(final_hit) instMap[addr]->_hit++;
+	else instMap[addr]->_miss++;
+#endif
+
+	if(!final_hit)
+	{
+		ADDRINT cacheline = addr & notLineMask;
+		if(staticInstMap.find(cacheline) == staticInstMap.end()) staticInstMap[cacheline] = staticInstMap.size();
+
+		missSeq.push_back(staticInstMap[cacheline]);
+	}
 
     _access[accessType][final_hit]++;
 

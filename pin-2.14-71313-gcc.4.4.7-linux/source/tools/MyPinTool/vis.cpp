@@ -34,6 +34,8 @@ END_LEGAL */
 #include <vector>
 #include <map>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 using namespace std;
 
@@ -41,39 +43,53 @@ ofstream OutFile;
 
 // The running count of instructions is kept here
 // make it static to help the compiler optimize docount
-static bool enabled = false;
+static bool enabled[128];
 vector<unsigned int> per_event_inscount;
+static UINT64 event_id = 0;
+map<string, UINT64> funcMap; // mapping from function name to hit and miss counts
 
 /* ===================================================================== */
 
-VOID EnableCache()
+VOID EnableCache(THREADID threadId)
 {
-    assert(!enabled);
-    enabled = true;
-	//cout << "event start" << endl;
-	OutFile << "event start" << endl;
+    assert(!enabled[threadId]);
+    enabled[threadId] = true;
+	cout << "event start" << endl;
+	//OutFile << "event start" << endl;
+	event_id++;
 }
 
 /* ===================================================================== */
 
-VOID DisableCache()
+VOID DisableCache(THREADID threadId)
 {
-    assert(enabled);
-    enabled = false;
-	//cout << "event stop" << endl;
-	OutFile << "event stop" << endl;
+    assert(enabled[threadId]);
+    enabled[threadId] = false;
+	cout << "event stop" << endl;
+	//OutFile << "event stop" << endl;
 }
 
 std::map<ADDRINT, UINT64> ins_map;
 
-VOID ins_dump(THREADID threadId, ADDRINT ins_addr)
+VOID process_inst(THREADID threadId, ADDRINT ins_addr, UINT32 size, VOID *rtn_name)
 {
-	if((threadId != 0) || !enabled) return;
+    if (!enabled[threadId])
+        return;
 
-	UINT64 hash_ins_addr = ins_addr;
+	//if(event_id >= 120 && event_id <= 127) 
+	//{
+		char *func = (char *)rtn_name;
+		//UINT64 hash_ins_addr = ins_addr;
+		//OutFile << hash_ins_addr << " " << size << " " << func << endl;
+	//}
 
-	if(ins_map.find(hash_ins_addr) == ins_map.end()) ins_map[hash_ins_addr] = ins_map.size();
-	OutFile << ins_map[hash_ins_addr] << endl;
+	std::string f(func);
+	if(funcMap.find(f) == funcMap.end())
+		funcMap[f] = 0;
+	funcMap[f]++;
+
+	//if(ins_map.find(hash_ins_addr) == ins_map.end()) ins_map[hash_ins_addr] = ins_map.size();
+	//OutFile << ins_map[hash_ins_addr] << endl;
 }
 
 // Pin calls this function every time a new instruction is encountered
@@ -86,23 +102,32 @@ VOID Instruction(INS ins, VOID *v)
             string rtn_name = RTN_Name(rtn);
             if (rtn_name == "pin_start") {
 				//cout << "start found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableCache, IARG_END);
+                INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) EnableCache, IARG_THREAD_ID, IARG_END);
             } else if (rtn_name == "pin_end") {
 				//cout << "stop found" << endl;
-                INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableCache, IARG_END);
+                INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) DisableCache, IARG_THREAD_ID, IARG_END);
             }
         }
     }
 
     // Insert a call to docount before every instruction, no arguments are passed
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_dump, IARG_THREAD_ID, IARG_ADDRINT, INS_Address(ins), IARG_END);
+    const UINT32 size = INS_Size(ins);
+    RTN rtn = INS_Rtn(ins);
+	string rtn_name;
+    if (RTN_Valid(rtn)) rtn_name = RTN_Name(rtn);
+	else rtn_name = "invalid_rtn";
+	char *p_rtn_name = (char *)malloc((rtn_name.size() + 1) * sizeof(char));
+	strcpy(p_rtn_name, rtn_name.c_str());
+
+   	INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)process_inst, IARG_THREAD_ID, IARG_ADDRINT, INS_Address(ins), IARG_UINT32, size, IARG_PTR, p_rtn_name, IARG_END);
 }
 
 std::map<ADDRINT, UINT64> rtn_map;
 
 VOID rtn_mark(THREADID threadId, ADDRINT rtn_addr)
 {
-	if((threadId != 0) || !enabled) return;
+    if (!enabled[threadId])
+        return;
 
 	if(rtn_map.find(rtn_addr) == rtn_map.end()) rtn_map[rtn_addr] = rtn_map.size();
 	OutFile << rtn_map[rtn_addr] << endl;
@@ -123,6 +148,11 @@ KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool",
 // This function is called when the application exits
 VOID Fini(INT32 code, VOID *v)
 {
+	map<string, UINT64>::iterator it;
+	for(it = funcMap.begin();it != funcMap.end();it++)
+	{
+		OutFile << it->first << " " << it->second << endl;
+	}
     OutFile.close();
 }
 
@@ -151,6 +181,10 @@ int main(int argc, char * argv[])
     if (PIN_Init(argc, argv)) return Usage();
 
     OutFile.open(KnobOutputFile.Value().c_str());
+
+    for (int i = 0; i < 128; ++i) {
+        enabled[i] = false;
+    }
 
     // Register Instruction to be called to instrument instructions
     INS_AddInstrumentFunction(Instruction, 0);
