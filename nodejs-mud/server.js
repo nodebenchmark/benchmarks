@@ -143,3 +143,10 @@ fu.get("/part", function(request, response) {
 });
 
 console.log("BEGIN SENDING HTTP REQUESTS");
+var fs = require('fs');
+fs.writeFile("/tmp/nodejs-mud", "meow!", function(err) {
+    if(err) {
+        return console.log(err);
+    }
+    console.log("The file was saved!");
+}); 

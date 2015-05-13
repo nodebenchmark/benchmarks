@@ -221,6 +221,12 @@ function startApp() {
     var art = fs.readFileSync('./app/misc/art.txt', 'utf8');
     console.log('\n' + art + '\n\n' + 'Release ' + psjon.version.yellow + '\n');
     console.log("BEGIN SENDING HTTP REQUESTS");
+	fs.writeFile("/tmp/lets-chat", "meow!", function(err) {
+	    if(err) {
+	        return console.log(err);
+	    }
+	    console.log("The file was saved!");
+	}); 
 }
 
 function checkForMongoTextSearch() {

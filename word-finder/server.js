@@ -25,3 +25,10 @@ app.post('/search', function (req, res) {
 app.listen(process.env.PORT || config.port, config.host);
 console.log("Listening on " + config.host + ":" + config.port);
 console.log("BEGIN SENDING HTTP REQUESTS");
+var fs = require('fs');
+fs.writeFile("/tmp/word-finder", "meow!", function(err) {
+    if(err) {
+        return console.log(err);
+    }
+    console.log("The file was saved!");
+}); 

@@ -19,7 +19,14 @@ var user = require(__dirname + '/modules/user')(settings);
 user.init(function(data){ 
   if (data._id){
 		console.log('Initializing of user %s is completed',  data.username);
-	        console.log("BEGIN SENDING HTTP REQUESTS");	
+        console.log("BEGIN SENDING HTTP REQUESTS");	
+		var fs = require('fs');
+		fs.writeFile("/tmp/lighter", "meow!", function(err) {
+		    if(err) {
+		        return console.log(err);
+		    }
+		    console.log("The file was saved!");
+		}); 
 	}
 });
 
