@@ -9,7 +9,7 @@ The workload suite itself is merely a collection of open source NodeJS applicati
 ## Basic Usage
 Once you have the NodeJS executable built and each individuall applications installed, you could launch an application using the following command:
 
-`sh node.sh application_name`, in which currently supported `application_name` includes: etherpad-lite, lets-chat, lighter, nodejs-mud, nodejs-todo, word-finder. A NodeJS application needs to be instrumented to be able to run with out test harness. Unsupported applications such as NodeBB and nodejs-chat are not instrumented. The detailed instrumentation instructions is work in progress.
+`sh node.sh application_name`, in which currently supported `application_name` includes: etherpad-lite, lets-chat, lighter, nodejs-mud, nodejs-todo, word-finder. A NodeJS application needs to be instrumented to be able to run with out test harness. Unsupported applications such as NodeBB and nodejs-chat are not instrumented. The detailed instrumentation instructions are work in progress.
 
 This command will launch the corresponding NodeJS server application as specified by `application_name` as well as a client simulator that sequentially issues requests to stress the application. For detailed options, take a look at nodebench and node.sh.
 
