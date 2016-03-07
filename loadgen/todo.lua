@@ -1,4 +1,4 @@
-local json = require("json")
+local json = require("loadgen.json")
 
 init = function(args)
    requestID = 0
