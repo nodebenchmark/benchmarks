@@ -24,7 +24,7 @@ The workflow has been tested on Linux machines, both Ubuntu and Centos.
 **Harness** There is no installation action needed to use the harness script `nodebench` except Python 2.7 is a prerequisite.
 
 ## Basic Usage
-Once you have the Node.js executable built and each individuall applications installed, you could launch an application using the following command:
+The `nodebench` python script is all your need to use the benchmark. Once you have the Node.js executable built and each individuall applications installed, you could launch an application using the following command:
 
 `sh node.sh application_name`, in which currently supported `application_name` includes: etherpad-lite, lets-chat, lighter, nodejs-mud, nodejs-todo, word-finder. A NodeJS application needs to be instrumented to be able to run with out test harness. Unsupported applications such as NodeBB and nodejs-chat are not instrumented. The detailed instrumentation instructions are work in progress.
 
