@@ -26,7 +26,7 @@ app.use('/public', express.static('public'));
 app.use(express.methodOverride());
 app.use(express.bodyParser());
 app.use(express.cookieParser());
-//app.use(express.session({secret: guid()}));
+app.use(express.session({secret: guid()}));
 
 app.use(app.router);
 
@@ -61,6 +61,7 @@ app.get('/todos', function(req, res) {
 app.post('/todos/create', function(req, res) {
   var id = guid();
   client.hset("todos", id, req.body.description);
+
   json(res, { id: id });
 });
 
@@ -76,13 +77,4 @@ app.post('/todos/delete', function(req, res) {
   json(res, { });
 });
 
-server.listen(process.env.PORT || config.port, config.host);
-console.log("server waiting on " + config.host + ":" + config.port);
-console.log("BEGIN SENDING HTTP REQUESTS");
-var fs = require('fs');
-fs.writeFile("/tmp/nodejs-todo", "meow!", function(err) {
-    if(err) {
-        return console.log(err);
-    }
-    console.log("The file was saved!");
-}); 
+server.listen(process.env.PORT || config.port);
