@@ -1,4 +1,4 @@
-#!/bin/env python2.7
+#!/usr/bin/env python2.7
 
 import argparse
 import signal
@@ -8,96 +8,84 @@ from random import seed, shuffle
 
 parser = argparse.ArgumentParser(description="NodeBench benchmarking harness.")
 parser.add_argument("-l", "--list-benchmarks", action="store_true",
-                    dest="list_bencharks", help="list benchmarks")
+                    dest="list_benchmarks", help="list benchmarks and exit")
+parser.add_argument("benchmark", help="benchmark to run (REQUIRED)")
 parser.add_argument("-n", "--node-binary", dest="node_binary", 
                     help="node binary to use", default="node")
-parser.add_argument("-b", "--benchmark", dest="benchmark")
-parser.add_argument("-i", "--instrumentation", dest="instrumentation", default="")
-parser.add_argument("-r", "--request-generator", dest="request_generator")
-parser.add_argument("-m", "--mode", dest="mode", help="mode to replay clients", default="sequential")
-parser.add_argument("-c", "--clients", dest="clients", help="number of clients", default=1, type=int)
-parser.add_argument("-s", "--seed", dest ="seed", help="seed for client interleaving", default=7, type=int)
-parser.add_argument("-o", "--order", dest ="order", help="client ordering", default="shuffled")
-parser.add_argument("--client-only", dest ="client_only", help="only the client", action="store_true")
-parser.add_argument("--server-only", dest ="server_only", help="only the server", action="store_true")
+parser.add_argument("-w", "--wrk-binary", dest="wrk_binary", 
+                    help="wrk binary to use", default="wrk2/wrk")
+parser.add_argument("-d", "--duration", dest="duration",
+                    help="duration of client load test", default="5s")
+parser.add_argument("-c", "--clients", dest="clients",
+                    help="number of clients (always 1 connection per client)", default="1")
+parser.add_argument("-r", "--rps", dest="rps",
+                    help="expected RPS", default="10")
 
 args = parser.parse_args()
-node_binary = args.node_binary
+list_benchmark = args.list_benchmarks
 benchmark = args.benchmark
-instrumentation = args.instrumentation
-mode = args.mode
+node_binary = args.node_binary
+wrk_binary = args.wrk_binary
+duration = args.duration
 clients = args.clients
-iseed = args.seed
-order = args.order
-client_only = args.client_only
-server_only = args.server_only
+rps = args.rps
 
 benchmark_registry = {
-    "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js"},
-    "lets-chat" : { "startup_script" : "app.js" },
-    "lighter" : { "startup_script" : "server.js" },
-    "nodejs-todo" : { "startup_script" : "server.js" },
-    "nodejs-mud" : { "startup_script" : "server.js" },
-    "word-finder" : { "startup_script" : "server.js" },
+    "ClientManager" : { "startup_script" : "app.js",
+                        "wrk_script" : "loadgen/clientmanager.lua",
+                        "port" : "8080"},
+    "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js",
+                        "wrk_script" : "loadgen/etherpad.lua",
+                        "port" : "50000"},
+    "lets-chat" : { "startup_script" : "app.js",
+                    "wrk_script" : "loadgen/chat.lua",
+                    "port" : "50001"},
+    "lighter" : { "startup_script" : "server.js",
+                  "wrk_script" : "loadgen/lighter.lua",
+                  "port" : "50002"},
+    "nodejs-todo" : { "startup_script" : "server.js",
+                      "wrk_script" : "loadgen/todo.lua",
+                      "port" : "50003"},
+    "nodejs-mud" : { "startup_script" : "server.js",
+                     "wrk_script" : "loadgen/mud.lua",
+                     "port" : "50004"},
+    "word-finder" : { "startup_script" : "server.js",
+                      "wrk_script" : "loadgen/word.lua",
+                      "port" : "50007"}
 }
 
-basedir = os.getcwd()
-
-#print "benchmark is %s" % benchmark
+if list_benchmark:
+    for app in benchmark_registry.keys():
+        print app
+    sys.exit(0)
 
 benchmark_info = benchmark_registry[benchmark]
 benchmark_dir = benchmark
 startup_script = benchmark_info["startup_script"]
+wrk_script = benchmark_info["wrk_script"]
+port = benchmark_info["port"]
 
+class cd:
+    """Context manager for changing the current working directory"""
+    def __init__(self, newPath):
+        self.newPath = os.path.expanduser(newPath)
 
-if not client_only:
-#
-    node_run_cmd = "%s %s %s %s" % (instrumentation, node_binary, startup_script, benchmark)
-    print node_run_cmd
-#    
-#    
-#    node = subprocess.Popen(node_run_cmd, stdout=subprocess.PIPE, shell=True)
-#    for line in iter(node.stdout.readline, ''):
-#        print line.strip("\r\n")
-#        if "BEGIN SENDING HTTP REQUESTS" in line:
-#            time.sleep(30)
-#    	    break
-#
-if not server_only:
+    def __enter__(self):
+        self.savedPath = os.getcwd()
+        os.chdir(self.newPath)
 
-    #os.chdir(benchmark_dir)
-    files = filter(lambda f: "_nodebench.py" in f, [d for d in os.listdir('.')])
-    execfile(files[0]) # TODO make work for multiple files
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.savedPath)
 
-    if mode == 'parallel':
-        pass
-        # p = Pool(num_threads)
-        # p.map(single_client_execute, range(num_client))
-    else: # sequential by default
-        if order == 'requests':
-            queue = [ i for j in range(len(user_requests)) for i in range(clients) ]
-        elif order == 'users':
-            queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
-        elif order == 'shuffled':
-            queue = [ i for i in range(clients) for j in range(len(user_requests)) ]
-            seed(iseed) # do no remove this!
-            shuffle(queue)
-        print queue
-        state = [ 0 for i in range(clients) ]
-        for ID in queue:
-            print ID
-            while True:
-                try:
-                    user_requests[state[ID]](ID)
-                    state[ID] += 1
-                    break
-                except Exception, err:
-                    print Exception, err
-                    time.sleep(30)
-                    continue
-    
-    assert all(s == len(user_requests) for s in state), "All requests did not execute"
-    #node.send_signal(signal.SIGINT)
-    #for line in iter(node.stdout.readline, ''):
-    #    print line.strip("\r\n")
-    #os.chdir(basedir)
+with cd(benchmark):
+    server=subprocess.Popen([node_binary, startup_script ])
+time.sleep(5)
+server_url = "http://localhost:%s" % (port)
+subprocess.call([wrk_binary, "-t", clients, "-c", clients, "-d", duration, "-R", rps, "-s", wrk_script, server_url])
+
+server.kill()
+if server.poll() == None:
+    print "Node.js server successfully killed!"
+else:
+    print "Node.js server is still running!"
+
