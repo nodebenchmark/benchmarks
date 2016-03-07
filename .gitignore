@@ -1,2 +1,4 @@
 dirty.db
 .gitignore
+.gitattributes
+.mailmap
