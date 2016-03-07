@@ -1,13 +1,15 @@
 # Node Benchmarks
-A collection of NodeJS benchmarks, along with testing harnesses.
+A collection of Node.js-based server applications along with a client-side load generator. This is a project from the [Electrical and Computer Engineering Department](http://www.ece.utexas.edu/) at The University of Texas at Austin.
 
 ## Installation
-The first step to run any NodeJS application is to have the NodeJS executable built. This repo contains a direct fork of NodeJS source code v.10.38, but does *not* build the exeutable for you. To do that, enter the `node` directory, and follow the build instructons. If you want to use other versions of NodeJS, feel free to replace the `node` directory with other forks.
+The first step to run any Node.js application is to have the NodeJS executable built. This repo contains a direct fork of [Node.js](https://github.com/nodejs/node) source tree v.10.38 (with some minor instrumentations for observing the libuv event loop), but does *not* build the exeutable for you. To build a node binary, enter the `node` directory, and follow the build instructons. If you want to use other versions of Node.js, feel free to replace the `node` directory with other forks.
 
-The workload suite itself is merely a collection of open source NodeJS applications with some wrapper scripts. There is no installation action needed to use the wrapper scripts except Python 2.7 is a prerequisite. However, to run each individual application, take a look at their corresponding directories and follow the corresponding installation steps closely.
+The workload suite itself is a collection of open source Node.js server applications with a client-side load generator. Some applications are slightly instrumented to be able to work with the load generator. There is no installation action needed to use the wrapper scripts except Python 2.7 is a prerequisite. However, to run each individual application, take a look at their corresponding directories and follow the corresponding installation steps closely.
+
+The workflow has been tested on Linux machines.
 
 ## Basic Usage
-Once you have the NodeJS executable built and each individuall applications installed, you could launch an application using the following command:
+Once you have the Node.js executable built and each individuall applications installed, you could launch an application using the following command:
 
 `sh node.sh application_name`, in which currently supported `application_name` includes: etherpad-lite, lets-chat, lighter, nodejs-mud, nodejs-todo, word-finder. A NodeJS application needs to be instrumented to be able to run with out test harness. Unsupported applications such as NodeBB and nodejs-chat are not instrumented. The detailed instrumentation instructions are work in progress.
 
