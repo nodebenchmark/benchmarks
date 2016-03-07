@@ -60,7 +60,7 @@ if list_benchmark:
     sys.exit(0)
 
 benchmark_info = benchmark_registry[benchmark]
-benchmark_dir = benchmark
+benchmark_dir = "applications/%s" % benchmark
 startup_script = benchmark_info["startup_script"]
 wrk_script = benchmark_info["wrk_script"]
 port = benchmark_info["port"]
@@ -77,7 +77,7 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
-with cd(benchmark):
+with cd(benchmark_dir):
     server=subprocess.Popen([node_binary, startup_script ])
 time.sleep(5)
 server_url = "http://localhost:%s" % (port)
