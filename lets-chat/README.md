@@ -4,6 +4,11 @@
 
 A self-hosted chat app for small teams built by [Security Compass][seccom].
 
+## Special Notes for NodeBench
+Various files in app/ are changed so that authentication is not required.
+This is to make the client load generator's life much easier. Take a look
+at the diff for more details.
+
 ## Features and Stuff
 
 * BYOS (bring your own server)
