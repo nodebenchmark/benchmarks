@@ -1,5 +1,5 @@
 # Node Benchmarks
-A collection of Node.js-based server applications along with a client-side load generator. The ultimate goal of this workload suite is to collect representative applications to enable research on designing better server systems in light of of the asynchronous, event-driven execution model that is increasingly prevalent in today's cloud environment.
+A collection of Node.js-based server applications along with a client-side load generator. The ultimate goal of this workload suite is to collect representative applications to enable research on designing better server systems in light of the asynchronous, event-driven execution model that is increasingly prevalent in today's cloud environment.
 
 This is a project from the [Electrical and Computer Engineering Department](http://www.ece.utexas.edu/) at [The University of Texas at Austin](http://www.utexas.edu/). Please see the contributor list at the end for a list of people who have been contributing to this project.
 
@@ -9,6 +9,7 @@ The high-level structure of this repo is as follows:
 * `node/`: The [Node.js](https://github.com/nodejs/node) source code. It is a direct fork of v.10.38 with some minor instrumentations for observing the libuv event loop.
 * `wrk2/`: The [wrk2](https://github.com/giltene/wrk2) load generator. It is integrated as a git submodule.
 * `applications/`: Contains 7 Node.js-based server applications as of now.
+* `loadgen/`: Contains the Lua scripts used by wrk2 to generate client-side loads for each application.
 * `nodebench`: The harness script that launches a given server application and its load generator.
 
 ## Installation
