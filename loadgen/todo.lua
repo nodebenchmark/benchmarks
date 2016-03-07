@@ -1,3 +1,5 @@
+local json = require("json")
+
 init = function(args)
    requestID = 0
    responseID = 0
@@ -29,10 +31,6 @@ request = function()
    return wrk.format(method, path)
 end
 
-
-
-local json = require("Eve.wrk2.scripts.json")
-
 response = function (status, headers, body)
    if responseID == 0 then
       obj, pos = json.parse(body)
@@ -44,5 +42,4 @@ response = function (status, headers, body)
       responseID = 0
    end
 end
-
 
