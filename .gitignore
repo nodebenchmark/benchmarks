@@ -3,3 +3,5 @@ dump.rdb
 .gitignore
 .gitattributes
 .mailmap
+*~
+applications/etherpad-lite/src/.ep_initialized
