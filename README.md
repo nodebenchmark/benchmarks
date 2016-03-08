@@ -13,7 +13,7 @@ The high-level structure of this repo is as follows:
 * `nodebench`: The harness script that launches a given server application and its load generator.
 
 ## Installation
-The workflow has been tested on Linux machines, both Ubuntu and Centos.
+The workflow has been tested on Linux machines, both Ubuntu and CentOS.
 
 **Node.js** The first step to run any Node.js application is to have the Node.js executable built. This repo contains the Node.js source code, but does *not* build the exeutable for you. To build a node binary, enter the `node/` directory, and follow the build instructons. If you want to use other versions of Node.js, feel free to replace the `node/` directory with other forks.
 
@@ -24,11 +24,16 @@ The workflow has been tested on Linux machines, both Ubuntu and Centos.
 **Harness** There is no installation action needed to use the harness script `nodebench` except Python 2.7 is a prerequisite.
 
 ## Basic Usage
-The `nodebench` python script is all your need to use the benchmark. Once you have the Node.js executable built and each individuall applications installed, you could launch an application using the following command:
+Once you have the Node.js executable built and each individuall applications installed, the `nodebench` python script is all you need to run the benchmark applications. `nodebench` starts a given application and launches its corresponding client-side load generator, which issues client requests in a parameterized manner. For a more detailed usage of the script take a look at the script itself, but here is a quick summary:
+* Run `./nodebench -h` to get a basic usage of the scipt.
+* Run `./nodebench -l` to show a list of support applications.
+* To run a supported application, run `./nodebench app_name`, which will first launch the specified server application and then isssue a set of client requests to the server. There are three optional parameters used to control the load generation. `-c` specifies the number of clients; `-d` specifies the duration of the load testing; `-r` specifies the expected throughput in terms of request-per-second. By default, `-c` is set to "1"; `-d` is set to "5s"; `-r` is set to "10". The duration argument needs to include a time unit (e.g., 2s, 2m, 2h). All the clients issue requests in parallel.
 
-`sh node.sh application_name`, in which currently supported `application_name` includes: etherpad-lite, lets-chat, lighter, nodejs-mud, nodejs-todo, word-finder. A NodeJS application needs to be instrumented to be able to run with out test harness. Unsupported applications such as NodeBB and nodejs-chat are not instrumented. The detailed instrumentation instructions are work in progress.
+Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will launch the `nodejs-todo` application and simulate 5 clients that simultaneously issue requests for 15 seconds at a rate of 100 requests per second.
 
-This command will launch the corresponding NodeJS server application as specified by `application_name` as well as a client simulator that sequentially issues requests to stress the application. For detailed options, take a look at nodebench and node.sh.
+## Advanced Usage
+
+The three parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are two important things that you might want to keep in mind. First, the script is going to launch the same amount of threads as the number of clients with each thread handling one client. Each client will open exactly one HTTP connection.
 
 ## Publication
 Kindly please cite the following paper if you use our workload suite for your work.
@@ -39,3 +44,6 @@ Y. Zhu, D. Richins, M. Halpern, and V. J. Reddi, "[Microarchitectural Implicatio
 [Yuhao Zhu](http://yuhaozhu.com/), Daniel Richins, Wenzhi Cui, [Matthew Halpern](http://matthewhalpern.com/), [Vijay Janapa Reddi](http://3nity.io/~vj/)
 
 We welcome contributors!
+
+## License
+This workload suite is under the [Creative Commons CC BY license](https://creativecommons.org/licenses/by/4.0/). In a few words, this means you can freely share this material (copy and redistribute the material in any medium or format) as well as adapt it (remix, transform, and build upon the material for any purpose, even commercially) provided that you credit the contributors (e.g., citing the above MICRO paper) as well as that you not in any way suggests that we endorse you or your use of this material.
