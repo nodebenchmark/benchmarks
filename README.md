@@ -47,7 +47,7 @@ The exact client behavior of each application is specified in the Lua scripts in
 1. The Lua script is thread local so all the variables are local to a thread.
 2. The `request()` function returns an HTTP request message that will be issued. The `response()` function is a callback function that will be called every time the client receives a response from the server. The `init()` function is executed once and only once before any requests is sent.
 3. For each connection, `request()` is blocking in the sense that `response()` is guaranteed to be executed after the client receives the response from the server. However as noted above, `request()` of a different connection in the same thread might execute earlier.
-4. The best way to learn what kind of HTTP request to send to simulate a particular client-side behavior is to intercept the HTTP request in a browser. [Chrome's DevTools](https://developer.chrome.com/devtools/docs/network) is a good friend for this purpose.
+4. The best way to learn what kind of HTTP request to send to simulate a particular client-side behavior is to intercept HTTP requests in a browser. [Chrome's DevTools](https://developer.chrome.com/devtools/docs/network) is a good friend for this purpose.
 5. wrk2 only issues HTTP requests. So if an Node.js application relies on websocket (e.g., socket.io), wrk2 will not work and you need to find another load generator.
 
 ## Publication
