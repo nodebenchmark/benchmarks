@@ -29,11 +29,26 @@ Once you have the Node.js executable built and each individuall applications ins
 * Run `./nodebench -l` to show a list of support applications.
 * To run a supported application, run `./nodebench app_name`, which will first launch the specified server application and then isssue a set of client requests to the server. There are three optional parameters used to control the load generation. `-c` specifies the number of clients; `-d` specifies the duration of the load testing; `-r` specifies the expected throughput in terms of request-per-second. By default, `-c` is set to "1"; `-d` is set to "5s"; `-r` is set to "10". The duration argument needs to include a time unit (e.g., 2s, 2m, 2h). All the clients issue requests in parallel.
 
-Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will launch the `nodejs-todo` application and simulate 5 clients that simultaneously issue requests for 15 seconds at a rate of 100 requests per second.
+Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will launch the `nodejs-todo` application and simulate 5 clients that *simultaneously* issue requests for 15 seconds at a rate of 100 requests per second.
 
 ## Advanced Usage
 
-The three parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are two important things that you might want to keep in mind. First, the script is going to launch the same amount of threads as the number of clients with each thread handling one client. Each client will open exactly one HTTP connection.
+We discuss two advanced usages: how to customize the load generator parameters to put different levels of stress on the server and how to customize your own client-side behavior. It is always more fruitful to read the code ;)
+
+#### Customize Load Parameters
+The three load generator related parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are a few tips:
+
+1. The `nodebench` script takes in a `-c` argument indicating the number of clients. wrk2 however does not have the concept of "client". Rather it has two concepts: "connection" and "thread". A connection is a HTTP connection that sends a request to the server and waits for the response before sending another request. All the connections are evenly distributed to each thread. By specifying the `-c` argument, `nodebench` is going to launch the same amount of threads as the number of connections (as specified by the value of `-c`) with each thread handling exactly one client. This is a preferred way of generating client loads as it is simple and clear--after all, the number of threads, not the number of connections, dictates the client-side concurrency. However, wrk2 does allows more flexible configurations such as more than one connection per thread if you want. Modify the `nodebench` script to do so.
+2. If you want to assign more than one connections to each thread, keep in mind that different connections within a thread are interleaved such that connection 2's request might go out before connection 1's response is received. You might run into unexpected bugs in the Lua script if not careful about this.
+
+#### Customize Client Behavior
+The exact client behavior of each application is specified in the Lua scripts in the `loadgen/` directory. We have hard-coded some representative behaviors for each application, but feel free to modify the Lua script. Here are a few tips:
+
+1. The Lua script is thread local so all the variables are local to a thread.
+2. The `request()` function returns an HTTP request message that will be issued. The `response()` function is a callback function that will be called every time the client receives a response from the server. The `init()` function is executed once and only once before any requests is sent.
+3. For each connection, `request()` is blocking in the sense that `response()` is guaranteed to be executed after the client receives the response from the server. However as noted above, `request()` of a different connection in the same thread might execute earlier.
+4. The best way to learn what kind of HTTP request to send to simulate a particular client-side behavior is to intercept the HTTP request in a browser. [Chrome's DevTools](https://developer.chrome.com/devtools/docs/network) is a good friend for this purpose.
+5. wrk2 only issues HTTP requests. So if an Node.js application relies on websocket (e.g., socket.io), wrk2 will not work and you need to find another load generator.
 
 ## Publication
 Kindly please cite the following paper if you use our workload suite for your work.
