@@ -33,7 +33,7 @@ Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will l
 
 ## Advanced Usage
 
-We discuss two advanced usages: how to customize the load generator parameters to put different levels of stress on the server and how to customize your own client-side behavior. It is always more fruitful to read the code ;)
+We discuss two advanced usages: how to customize the load generator parameters to put different levels of stress on the server and how to customize your own client-side behavior. It is always more fruitful to read the code directly ;)
 
 #### Customize Load Parameters
 The three load generator related parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are a few tips:
