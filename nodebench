@@ -44,7 +44,7 @@ benchmark_registry = {
     "habitrpg"      : { "startup_script" : "website/src/server.js",
                         "wrk_script"     : "loadgen/habitrpg.lua",
                         "mongodb_name"   : "habitrpg",
-                        "port"           : "3000"},
+                        "port"           : "50006"},
     "lets-chat"     : { "startup_script" : "app.js",
                         "wrk_script"     : "loadgen/chat.lua",
                         "mongodb_name"   : "lets-chat",
@@ -89,11 +89,11 @@ class cd:
 
 # Prolog: import the mongodb database
 if benchmark == "habitrpg":
-    subprocess.call(["mongorestore", "-d", mongodb, mongodb])
+    subprocess.call(["mongorestore", "-d", mongodb, "applications/habitrpg/database/habitrpg"])
 
 with cd(benchmark_dir):
     server=subprocess.Popen([node_binary, startup_script ])
-time.sleep(5)
+time.sleep(15)
 server_url = "http://localhost:%s" % (port)
 subprocess.call([wrk_binary, "-t", clients, "-c", clients, "-d", duration, "-R", rps, "-s", wrk_script, server_url])
 
