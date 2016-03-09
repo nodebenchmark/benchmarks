@@ -28,8 +28,9 @@ Once you have the Node.js executable built and each individuall applications ins
 * Run `./nodebench -h` to get a basic usage of the scipt.
 * Run `./nodebench -l` to show a list of support applications.
 * To run a supported application, run `./nodebench app_name`, which will first launch the specified server application and then isssue a set of client requests to the server. There are three optional parameters used to control the load generation. `-c` specifies the number of clients; `-d` specifies the duration of the load testing; `-r` specifies the expected throughput in terms of request-per-second. By default, `-c` is set to "1"; `-d` is set to "5s"; `-r` is set to "10". The duration argument needs to include a time unit (e.g., 2s, 2m, 2h). All the clients issue requests in parallel.
+* Make sure `-r` divided by `-c` is greater than 1 otherwise wrk2 would think that the expected RPS per client is 0 (because wrk2 does simple integer division) and hang--but with ~100% CPU utilization!.
 
-Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will launch the `nodejs-todo` application and simulate 5 clients that *simultaneously* issue requests for 15 seconds at a rate of 100 requests per second. Make sure `-r` divided by `-c` is greater than 1 otherwise wrk2 would think that the expected RPS per client is 0 (because wrk2 does simple integer division) and hang--but utilizing ~100% CPU resources!).
+Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will launch the `nodejs-todo` application and simulate 5 clients that *simultaneously* issue requests for 15 seconds at a rate of 100 requests per second.
 
 ## Advanced Usage
 
