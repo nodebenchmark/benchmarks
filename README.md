@@ -33,16 +33,16 @@ Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will l
 
 ## Advanced Usage
 
-We discuss two advanced usages: how to customize the load generator parameters to put different levels of stress on the server and how to customize your own client-side behavior. It is always more fruitful to read the code directly ;)
+We discuss a few advanced usages here. It is always more fruitful to read the code directly ;)
 
 #### Customize Load Parameters
-The three load generator related parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are a few tips:
+Sometime we want to to customize the load generator parameters to put different levels of stress on the server. The three load generator related parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are a few tips:
 
 1. The `nodebench` script takes in a `-c` argument indicating the number of clients. wrk2 however does not have the concept of "client". Rather it has two concepts: "connection" and "thread". A connection is a HTTP connection that sends a request to the server and waits for the response before sending another request. All the connections are evenly distributed to each thread. By specifying the `-c` argument, `nodebench` is going to launch the same amount of threads as the number of connections (as specified by the value of `-c`) with each thread handling exactly one client. This is a preferred way of generating client loads as it is simple and clear--after all, the number of threads, not the number of connections, dictates the client-side concurrency. However, wrk2 does allows more flexible configurations such as more than one connection per thread if you want. Modify the `nodebench` script to do so.
 2. If you want to assign more than one connections to each thread, keep in mind that different connections within a thread are interleaved such that connection 2's request might go out before connection 1's response is received. You might run into unexpected bugs in the Lua script if not careful about this.
 
 #### Customize Client Behavior
-The exact client behavior of each application is specified in the Lua scripts in the `loadgen/` directory. We have hard-coded some representative behaviors for each application, but feel free to modify the Lua script. Here are a few tips:
+The exact client behavior of each application is specified in the Lua scripts in the `loadgen/` directory. We have hard-coded some representative behaviors for each application, but sometimes you might want to generate your own client-side behaviors. Modify the corresponding Lua script to do that. Here are a few tips:
 
 1. The Lua script is thread local so all the variables are local to a thread.
 2. The `request()` function returns an HTTP request message that will be issued. The `response()` function is a callback function that will be called every time the client receives a response from the server. The `init()` function is executed once and only once before any requests is sent.
