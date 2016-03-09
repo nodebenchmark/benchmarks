@@ -94,10 +94,11 @@ class cd:
 
 # Prolog: import the mongodb database
 if benchmark == "habitrpg":
-    subprocess.call(["mongorestore", "-d", mongodb, "applications/habitrpg/database/habitrpg"])
+    subprocess.call(["mongorestore", "-d", mongodb, "applications/%s/database/%s" % (benchmark, mongodb)])
 
 with cd(benchmark_dir):
-    server=subprocess.Popen([node_binary, startup_script ])
+    server = subprocess.Popen([node_binary, startup_script ])
+
 time.sleep(15)
 server_url = "http://localhost:%s" % (port)
 subprocess.call([wrk_binary, "-t", clients, "-c", clients, "-d", duration, "-R", rps, "-s", wrk_script, server_url])
