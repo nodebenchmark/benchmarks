@@ -37,7 +37,7 @@ benchmark_registry = {
     "ClientManager" : { "startup_script" : "app.js",
                         "wrk_script"     : "loadgen/clientmanager.lua",
                         "mongodb_name"   : "clients-dev",
-                        "port"           : "8080"},
+                        "port"           : "50005"},
     "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js",
                         "wrk_script"     : "loadgen/etherpad.lua",
                         "port"           : "50000"},
