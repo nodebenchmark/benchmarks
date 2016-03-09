@@ -13,7 +13,7 @@ The high-level structure of this repo is as follows:
 * `nodebench`: The harness script that launches a given server application and its load generator.
 
 ## Installation
-The workflow has been tested on Linux machines, both Ubuntu and Centos.
+The workflow has been tested on Linux machines, both Ubuntu and CentOS.
 
 **Node.js** The first step to run any Node.js application is to have the Node.js executable built. This repo contains the Node.js source code, but does *not* build the exeutable for you. To build a node binary, enter the `node/` directory, and follow the build instructons. If you want to use other versions of Node.js, feel free to replace the `node/` directory with other forks.
 
@@ -24,11 +24,31 @@ The workflow has been tested on Linux machines, both Ubuntu and Centos.
 **Harness** There is no installation action needed to use the harness script `nodebench` except Python 2.7 is a prerequisite.
 
 ## Basic Usage
-The `nodebench` python script is all your need to use the benchmark. Once you have the Node.js executable built and each individuall applications installed, you could launch an application using the following command:
+Once you have the Node.js executable built and each individuall applications installed, the `nodebench` python script is all you need to run the benchmark applications. `nodebench` starts a given application and launches its corresponding client-side load generator, which issues client requests in a parameterized manner. For a more detailed usage of the script take a look at the script itself, but here is a quick summary:
+* Run `./nodebench -h` to get a basic usage of the scipt.
+* Run `./nodebench -l` to show a list of support applications.
+* To run a supported application, run `./nodebench app_name`, which will first launch the specified server application and then isssue a set of client requests to the server. There are three optional parameters used to control the load generation. `-c` specifies the number of clients; `-d` specifies the duration of the load testing; `-r` specifies the expected throughput in terms of request-per-second. By default, `-c` is set to "1"; `-d` is set to "5s"; `-r` is set to "10". The duration argument needs to include a time unit (e.g., 2s, 2m, 2h). All the clients issue requests in parallel.
 
-`sh node.sh application_name`, in which currently supported `application_name` includes: etherpad-lite, lets-chat, lighter, nodejs-mud, nodejs-todo, word-finder. A NodeJS application needs to be instrumented to be able to run with out test harness. Unsupported applications such as NodeBB and nodejs-chat are not instrumented. The detailed instrumentation instructions are work in progress.
+Here is a simple example: `./nodebench -b nodejs-todo -c 5 -d 15s -r 100` will launch the `nodejs-todo` application and simulate 5 clients that *simultaneously* issue requests for 15 seconds at a rate of 100 requests per second.
 
-This command will launch the corresponding NodeJS server application as specified by `application_name` as well as a client simulator that sequentially issues requests to stress the application. For detailed options, take a look at nodebench and node.sh.
+## Advanced Usage
+
+We discuss two advanced usages: how to customize the load generator parameters to put different levels of stress on the server and how to customize your own client-side behavior. It is always more fruitful to read the code ;)
+
+#### Customize Load Parameters
+The three load generator related parameteres will be trasnslated to wrk2's parameters. So take a look at wrk2's [readme](https://github.com/giltene/wrk2/tree/c4250acb6921c13f8dccfc162d894bd7135a2979) for more detailed information. Here are a few tips:
+
+1. The `nodebench` script takes in a `-c` argument indicating the number of clients. wrk2 however does not have the concept of "client". Rather it has two concepts: "connection" and "thread". A connection is a HTTP connection that sends a request to the server and waits for the response before sending another request. All the connections are evenly distributed to each thread. By specifying the `-c` argument, `nodebench` is going to launch the same amount of threads as the number of connections (as specified by the value of `-c`) with each thread handling exactly one client. This is a preferred way of generating client loads as it is simple and clear--after all, the number of threads, not the number of connections, dictates the client-side concurrency. However, wrk2 does allows more flexible configurations such as more than one connection per thread if you want. Modify the `nodebench` script to do so.
+2. If you want to assign more than one connections to each thread, keep in mind that different connections within a thread are interleaved such that connection 2's request might go out before connection 1's response is received. You might run into unexpected bugs in the Lua script if not careful about this.
+
+#### Customize Client Behavior
+The exact client behavior of each application is specified in the Lua scripts in the `loadgen/` directory. We have hard-coded some representative behaviors for each application, but feel free to modify the Lua script. Here are a few tips:
+
+1. The Lua script is thread local so all the variables are local to a thread.
+2. The `request()` function returns an HTTP request message that will be issued. The `response()` function is a callback function that will be called every time the client receives a response from the server. The `init()` function is executed once and only once before any requests is sent.
+3. For each connection, `request()` is blocking in the sense that `response()` is guaranteed to be executed after the client receives the response from the server. However as noted above, `request()` of a different connection in the same thread might execute earlier.
+4. The best way to learn what kind of HTTP request to send to simulate a particular client-side behavior is to intercept HTTP requests in a browser. [Chrome's DevTools](https://developer.chrome.com/devtools/docs/network) is a good friend for this purpose.
+5. wrk2 only issues HTTP requests. So if an Node.js application relies on websocket (e.g., socket.io), wrk2 will not work and you need to find another load generator.
 
 ## Publication
 Kindly please cite the following paper if you use our workload suite for your work.
@@ -39,3 +59,6 @@ Y. Zhu, D. Richins, M. Halpern, and V. J. Reddi, "[Microarchitectural Implicatio
 [Yuhao Zhu](http://yuhaozhu.com/), Daniel Richins, Wenzhi Cui, [Matthew Halpern](http://matthewhalpern.com/), [Vijay Janapa Reddi](http://3nity.io/~vj/)
 
 We welcome contributors!
+
+## License
+This workload suite is under the [Creative Commons CC BY license](https://creativecommons.org/licenses/by/4.0/). In a few words, this means you can freely share this material (copy and redistribute the material in any medium or format) as well as adapt it (remix, transform, and build upon the material for any purpose, even commercially) provided that you credit the contributors (e.g., citing the above MICRO paper) as well as that you not in any way suggests that we endorse you or your use of this material.
