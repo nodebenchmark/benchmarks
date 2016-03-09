@@ -86,6 +86,12 @@ time.sleep(5)
 server_url = "http://localhost:%s" % (port)
 subprocess.call([wrk_binary, "-t", clients, "-c", clients, "-d", duration, "-R", rps, "-s", wrk_script, server_url])
 
+# Drop the MongoDB batabase for ClientManger and lets-chat such that the next run will start  from a clean slate.
+if benchmark == "ClientManager":
+    subprocess.call(["mongo", "clients-dev", "--eval", "db.dropDatabase()"])
+elif benchmark == "lets-chat":
+    subprocess.call(["mongo", "letschat", "--eval", "db.dropDatabase()"])
+
 server.kill()
 if server.poll() == None:
     print "Node.js server successfully killed!"
