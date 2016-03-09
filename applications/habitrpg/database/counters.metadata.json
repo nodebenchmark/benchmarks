@@ -1,1 +1,0 @@
-{"indexes":[{"v":1,"key":{"_id":1},"name":"_id_","ns":"habitrpg.counters"},{"v":1,"unique":true,"key":{"field":1,"model":1},"name":"field_1_model_1","ns":"habitrpg.counters","required":true,"index":-1,"background":true,"safe":null}]}

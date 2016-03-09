@@ -1,1 +1,0 @@
-{"indexes":[{"v":1,"key":{"_id":1},"name":"_id_","ns":"habitrpg.coupons"},{"v":1,"unique":true,"key":{"seq":1},"name":"seq_1","ns":"habitrpg.coupons","background":true,"safe":null}]}

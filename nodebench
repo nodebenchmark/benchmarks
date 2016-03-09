@@ -92,10 +92,6 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
-# Prolog: import the mongodb database
-if benchmark == "habitrpg":
-    subprocess.call(["mongorestore", "-d", mongodb, "applications/%s/database" % benchmark])
-
 with cd(benchmark_dir):
     server = subprocess.Popen([node_binary, startup_script ])
 
