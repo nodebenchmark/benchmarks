@@ -1,0 +1,13 @@
+extends ./layout
+
+block vars
+  - var layoutEnv = env
+  - var menuItem = 'oldNews'
+
+block title
+  title Old News
+
+block content
+  .static-old-news
+    include ../shared/new-stuff
+    +oldNews()

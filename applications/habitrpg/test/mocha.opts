@@ -1,0 +1,10 @@
+--colors
+--reporter spec
+--timeout 8000
+--check-leaks
+--growl
+--globals io
+-r babel-polyfill
+--compilers js:babel-register
+--require test/api-legacy/api-helper
+--require ./test/helpers/globals.helper

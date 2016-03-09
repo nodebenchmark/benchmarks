@@ -1,0 +1,43 @@
+extends ./layout
+
+block vars
+  - var layoutEnv = env
+  - var menuItem = 'pressKit'
+
+block title
+  title= env.t('presskit')
+
+block extraHead
+  style.
+    .press-img {
+      max-width: 500px;
+    }
+
+block content
+  h2= env.t('presskit')
+  p= env.t('presskitText')
+  p= env.t('presskitDownload')
+    | &nbsp;
+    a.btn.btn-success(href='/presskit/presskit.zip') presskit.zip
+  - var imgs = ['Habitica Text Logo', 'Habitica Logo Promo', 'Habitica Gryphon', 'Dread Drag\'on of Dilatory', 'Market Sample Screen', 'Challenges Sample Screen', 'Equipment Sample Screen', 'Guilds Sample Screen', 'HabiticaPromoThin', 'Laundromancer', 'Tasks Page', 'SnackLess Monster', 'Battling the Ghost Stag', 'Stagnant Dishes Boss', 'Necro-Vice']
+
+  //-#carousel.carousel.slide(data-ride='carousel')
+    ol.carousel-indicators
+      each img, i in imgs
+        li(class=i==0?'active':'', data-target='#carousel', data-slide-to=i)
+    .carousel-inner(role='listbox')
+      each img, i in imgs
+        .item(class=i==0?'active':'')
+          img(src="/presskit/#{img}.png")
+          //.carousel-caption=img
+    a.left.carousel-control(href='#carousel', role='button', data-slide='prev')
+      span.glyphicon.glyphicon-chevron-left(aria-hidden='true')
+      span.sr-only= env.t('previous')
+    a.right.carousel-control(href='#carousel', role='button', data-slide='next')
+      span.glyphicon.glyphicon-chevron-right(aria-hidden='true')
+      span.sr-only= env.t('next')
+
+  ul.list-unstyled
+    each img in imgs
+      li
+        img.img-rendering-auto.press-img(src="/presskit/#{img}.png")
