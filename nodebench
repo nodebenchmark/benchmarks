@@ -35,26 +35,32 @@ rps = args.rps
 
 benchmark_registry = {
     "ClientManager" : { "startup_script" : "app.js",
-                        "wrk_script" : "loadgen/clientmanager.lua",
-                        "port" : "8080"},
+                        "wrk_script"     : "loadgen/clientmanager.lua",
+                        "mongodb_name"   : "clients-dev",
+                        "port"           : "8080"},
     "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js",
-                        "wrk_script" : "loadgen/etherpad.lua",
-                        "port" : "50000"},
-    "lets-chat" : { "startup_script" : "app.js",
-                    "wrk_script" : "loadgen/chat.lua",
-                    "port" : "50001"},
-    "lighter" : { "startup_script" : "server.js",
-                  "wrk_script" : "loadgen/lighter.lua",
-                  "port" : "50002"},
-    "nodejs-todo" : { "startup_script" : "server.js",
-                      "wrk_script" : "loadgen/todo.lua",
-                      "port" : "50003"},
-    "nodejs-mud" : { "startup_script" : "server.js",
-                     "wrk_script" : "loadgen/mud.lua",
-                     "port" : "50004"},
-    "word-finder" : { "startup_script" : "server.js",
-                      "wrk_script" : "loadgen/word.lua",
-                      "port" : "50007"}
+                        "wrk_script"     : "loadgen/etherpad.lua",
+                        "port"           : "50000"},
+    "habitrpg"      : { "startup_script" : "website/src/server.js",
+                        "wrk_script"     : "loadgen/habitrpg.lua",
+                        "mongodb_name"   : "habitrpg",
+                        "port"           : "3000"},
+    "lets-chat"     : { "startup_script" : "app.js",
+                        "wrk_script"     : "loadgen/chat.lua",
+                        "mongodb_name"   : "lets-chat",
+                        "port"           : "50001"},
+    "lighter"       : { "startup_script" : "server.js",
+                        "wrk_script"     : "loadgen/lighter.lua",
+                        "port"           : "50002"},
+    "nodejs-mud"    : { "startup_script" : "server.js",
+                        "wrk_script"     : "loadgen/mud.lua",
+                        "port"           : "50004"},
+    "nodejs-todo"   : { "startup_script" : "server.js",
+                        "wrk_script"     : "loadgen/todo.lua",
+                        "port"           : "50003"},
+    "word-finder"   : { "startup_script" : "server.js",
+                        "wrk_script"     : "loadgen/word.lua",
+                        "port"           : "50007"}
 }
 
 if list_benchmark:
@@ -66,6 +72,7 @@ benchmark_info = benchmark_registry[benchmark]
 benchmark_dir = "applications/%s" % benchmark
 startup_script = benchmark_info["startup_script"]
 wrk_script = benchmark_info["wrk_script"]
+mongodb = benchmark_info["mongodb_name"]
 port = benchmark_info["port"]
 
 class cd:
@@ -80,17 +87,19 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
+# Prolog: import the mongodb database
+if benchmark == "habitrpg":
+    subprocess.call(["mongorestore", "-d", mongodb, mongodb])
+
 with cd(benchmark_dir):
     server=subprocess.Popen([node_binary, startup_script ])
 time.sleep(5)
 server_url = "http://localhost:%s" % (port)
 subprocess.call([wrk_binary, "-t", clients, "-c", clients, "-d", duration, "-R", rps, "-s", wrk_script, server_url])
 
-# Drop the MongoDB batabase for ClientManger and lets-chat such that the next run will start  from a clean slate.
-if benchmark == "ClientManager":
-    subprocess.call(["mongo", "clients-dev", "--eval", "db.dropDatabase()"])
-elif benchmark == "lets-chat":
-    subprocess.call(["mongo", "letschat", "--eval", "db.dropDatabase()"])
+# Epilog: drop the mongodb batabase so the next run will start from a clean slate.
+if benchmark == "ClientManager" or benchmark == "lets-chat" or benchmark == "habitrpg":
+    subprocess.call(["mongo", mongodb, "--eval", "db.dropDatabase()"])
 
 server.kill()
 if server.poll() == None:
