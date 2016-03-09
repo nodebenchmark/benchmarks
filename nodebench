@@ -40,6 +40,7 @@ benchmark_registry = {
                         "port"           : "50005"},
     "etherpad-lite" : { "startup_script" : "node_modules/ep_etherpad-lite/node/server.js",
                         "wrk_script"     : "loadgen/etherpad.lua",
+                        "mongodb_name"   : "",
                         "port"           : "50000"},
     "habitrpg"      : { "startup_script" : "website/src/server.js",
                         "wrk_script"     : "loadgen/habitrpg.lua",
@@ -51,15 +52,19 @@ benchmark_registry = {
                         "port"           : "50001"},
     "lighter"       : { "startup_script" : "server.js",
                         "wrk_script"     : "loadgen/lighter.lua",
+                        "mongodb_name"   : "",
                         "port"           : "50002"},
     "nodejs-mud"    : { "startup_script" : "server.js",
                         "wrk_script"     : "loadgen/mud.lua",
+                        "mongodb_name"   : "",
                         "port"           : "50004"},
     "nodejs-todo"   : { "startup_script" : "server.js",
                         "wrk_script"     : "loadgen/todo.lua",
+                        "mongodb_name"   : "",
                         "port"           : "50003"},
     "word-finder"   : { "startup_script" : "server.js",
                         "wrk_script"     : "loadgen/word.lua",
+                        "mongodb_name"   : "",
                         "port"           : "50007"}
 }
 
