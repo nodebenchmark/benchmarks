@@ -9,7 +9,8 @@ from random import seed, shuffle
 parser = argparse.ArgumentParser(description="NodeBench benchmarking harness.")
 parser.add_argument("-l", "--list-benchmarks", action="store_true",
                     dest="list_benchmarks", help="list benchmarks and exit")
-parser.add_argument("benchmark", help="benchmark to run (REQUIRED)")
+parser.add_argument("-b", "--benchmark", dest="benchmark",
+                    help="benchmark to run")
 parser.add_argument("-n", "--node-binary", dest="node_binary", 
                     help="node binary to use", default="node")
 parser.add_argument("-w", "--wrk-binary", dest="wrk_binary", 
@@ -22,6 +23,8 @@ parser.add_argument("-r", "--rps", dest="rps",
                     help="expected RPS", default="10")
 
 args = parser.parse_args()
+if not (args.benchmark or args.list_benchmarks):
+    parser.error('One of -l or -b must be provided. See -h for help.')
 list_benchmark = args.list_benchmarks
 benchmark = args.benchmark
 node_binary = args.node_binary
