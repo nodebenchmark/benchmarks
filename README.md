@@ -19,7 +19,7 @@ The workflow has been tested on Linux machines, both Ubuntu and CentOS.
 * Check out the repository recursively:<br>
 `git clone --recursively https://github.com/nodebenchmark/benchmarks.git`.<br>
 Or if you already checkout without `--recursive` option:<br>
-`git submodule update --init --recursive`
+`git submodule update --init --recursive`.
 * Build dependencies, see below.
 
 **Node.js** The first step to run any Node.js application is to have the Node.js executable built. This repo contains the Node.js source code, but does *not* build the exeutable for you. To build a node binary, enter the `node/` directory, and follow the build instructons. If you want to use other versions of Node.js, feel free to replace the `node/` directory with other forks.
